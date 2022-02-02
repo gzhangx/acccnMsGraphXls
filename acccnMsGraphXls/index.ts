@@ -6,7 +6,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     const getPrm = name => (req.query[name] || (req.body && req.body[name]));
     const action = getPrm('action');
 
-    await store.getAllDataNoCache();
+    //await store.getAllDataNoCache();
     let responseMessage = null;
     if (action === "saveGuest") {
         const name = getPrm('name');
