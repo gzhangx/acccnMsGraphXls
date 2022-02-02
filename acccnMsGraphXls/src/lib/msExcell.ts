@@ -1,5 +1,5 @@
 import { getDefaultAuth, ITenantClientId, ITokenInfo } from "./msauth";
-import * as request from 'superagent';
+import Axios from 'axios';
 
 export interface IMsGraphExcelItemOpt {
     tenantClientInfo: ITenantClientId;
@@ -43,15 +43,7 @@ interface IReadSheetValues {
     valueTypes: string[][];
     values: string[][];
 }
-
-export interface IMsExcelOps {
-    getWorkSheets: () => Promise<IWorkSheetInfo>;
-    createSheet: (name: string) => Promise<any>;
-    readRange: (name: string, from: string, to: string) => Promise<IReadSheetValues>;
-    getRangeFormat: (name: string, from: string, to: string) => Promise<IReadSheetValues>;
-    updateRange: (name: string, from: string, to: string, values: string[][])=> Promise<IReadSheetValues>;
-}
-export async function getMsExcel(opt: IMsGraphExcelItemOpt): Promise<IMsExcelOps> {
+export async function getMsExcel(opt: IMsGraphExcelItemOpt) {
     const now = new Date().getTime();
     async function getToken() : Promise<ITokenInfo> {
         if (!opt.tokenInfo || opt.tokenInfo.expires_on < now / 1000) {
@@ -63,22 +55,30 @@ export async function getMsExcel(opt: IMsGraphExcelItemOpt): Promise<IMsExcelOps
         return opt.tokenInfo;
     }
 
-    async function doGet(url:string) {
+    async function getHeaders() {
         const tok = await getToken();
-        return request.get(getUrl(url))
-            .set("Authorization", `Bearer ${tok.access_token}`).send().then(r => r.body);
+        return {
+            headers: {
+                "Authorization": `Bearer ${tok.access_token}`
+            }
+        };
+    }
+
+    function parseResp(r: {data:any}) {
+        return r.data;
+    }
+    async function doGet(url:string) {
+        return await Axios.get(getUrl(url), await getHeaders())
+            .then(parseResp);
     }
 
     async function doPost(postFix: string, data: object) {
-        const tok = await getToken();
-        return request.post(getUrl(postFix))
-            .set("Authorization", `Bearer ${tok.access_token}`).send(data).then(r => r.body);
+        return Axios.post(getUrl(postFix), data, await getHeaders()).then(parseResp);
     }
 
     async function doPatch(postFix: string, data: object) {
-        const tok = await getToken();
-        return request.patch(getUrl(postFix))
-            .set("Authorization", `Bearer ${tok.access_token}`).send(data).then(r => r.body);
+        return Axios.patch(getUrl(postFix), data, await getHeaders())
+            .then(parseResp);
     }
 
     const getUrl = (postFix: string) => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/drive/items('${opt.itemId}')/workbook/worksheets${postFix}`;

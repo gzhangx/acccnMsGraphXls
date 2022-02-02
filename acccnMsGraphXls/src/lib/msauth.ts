@@ -1,5 +1,5 @@
-import * as request from "superagent";
-import * as  promise from 'bluebird';
+import { Axios } from "axios";
+//import * as  promise from 'bluebird';
 import * as fs from "fs";
 import { get } from 'lodash';
 
@@ -25,6 +25,16 @@ export interface ITokenInfo {
     access_token: string;
     expires_on: number;
 }
+
+async function delay(ms: number) {
+    return new Promise(resolve => {
+            
+        setTimeout(() => {
+            resolve();
+        }, ms);
+    });
+}
+
 export function getAuth(opt: IAuthOpt) {
     const tenantId = opt.tenantId;
     const client_id = opt.client_id;
@@ -42,14 +52,31 @@ export function getAuth(opt: IAuthOpt) {
     const resource = 'https://graph.microsoft.com';
     const scope = opt.scope || 'Mail.Read openid profile User.Read email Files.ReadWrite.All Files.ReadWrite Files.Read Files.Read.All Files.Read.Selected Files.ReadWrite.AppFolder Files.ReadWrite.Selected';
     const queryCodeurl = `https://login.microsoftonline.com/${tenantId}/oauth2/token`;
-    async function getRefreshToken() {
-        const codeWaitInfo = await request.post(`https://login.microsoftonline.com/${tenantId}/oauth2/devicecode`)
-            .type('form')
-            .send({
-                resource,
-                scope,
-                client_id,
-            }).then(r => r.body).catch(err => err.response.text) as ICodeWaitInfo;
+    const request = new Axios({});
+
+    function getFormData(obj: {[id:string]:any}): string {        
+        const keys = Object.keys(obj);
+        const data = keys.map(key => {
+            return `${key}=${encodeURIComponent(obj[key])}`;
+        }).join('&')
+        return data;
+    }
+    async function doPost(url: string, data: { [id: string]: any }): Promise<any> {
+        const dataStr = getFormData(data);
+        return await request.post(url, dataStr, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        }).then(r => {
+            return JSON.parse(r.data);
+        });
+    }
+    async function getRefreshToken() {        
+        const codeWaitInfo = await doPost(`https://login.microsoftonline.com/${tenantId}/oauth2/devicecode`, {
+            resource,
+            scope,
+            client_id,
+        }) as ICodeWaitInfo;
 
         //const user_code = codeWaitInfo.user_code; // presented to the user
         const deviceCode = codeWaitInfo.device_code; // internal code to identify the user
@@ -57,17 +84,16 @@ export function getAuth(opt: IAuthOpt) {
         const message = codeWaitInfo.message; //send user code to url
         await promptUser(message, codeWaitInfo);
         while (true) {
-            const rr = await request.post(queryCodeurl)
-                .type('form')
-                .send({
-                    grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-                    resource: 'https://graph.microsoft.com',
-                    scope,
-                    code: deviceCode,
-                    client_id
-                }).then(r => r.body).catch(err => err.response.body);
+            const rr = await doPost(queryCodeurl, {
+                grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+                resource: 'https://graph.microsoft.com',
+                scope,
+                code: deviceCode,
+                client_id
+            });
             if (rr.error === 'authorization_pending') {
-                await promise.Promise.delay(opt.pollTime || 1000);
+                //await promise.Promise.delay(opt.pollTime || 1000);
+                await delay(opt.pollTime || 1000);
                 continue;
             }
             ///console.log(rr);
@@ -81,15 +107,14 @@ export function getAuth(opt: IAuthOpt) {
     async function getAccessToken(): Promise<ITokenInfo> {
         const credentials = await loadToken();;
         const { refresh_token } = credentials;
-        const ac = await request.post(queryCodeurl)
-            .type('form')
-            .send({
-                scope,
-                resource,
-                refresh_token,
-                grant_type: 'refresh_token',
-                client_id
-            }).then(r => r.body) as ITokenInfo;
+        const form = {
+            scope,
+            resource,
+            refresh_token,
+            grant_type: 'refresh_token',
+            client_id
+        };
+        const ac = await doPost(queryCodeurl, form) as ITokenInfo;
 
         return ac;
     }
