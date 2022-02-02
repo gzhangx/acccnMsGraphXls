@@ -48,7 +48,7 @@ export async function loadData(): Promise<string[][]> {
 export async function saveData(): Promise<void> {
     const ops = await createMsOps();
     const today = getToday();
-    ops.updateRange(today, `A1`, `C${curSheetData.length+1}`, curSheetData);
+    await ops.updateRange(today, `A1`, `C${curSheetData.length+1}`, curSheetData);
 }
 
 export async function addAndSave(ary: string[]): Promise<void> {
