@@ -11,14 +11,15 @@
   },
   "dependencies": {
     "bluebird": "^3.7.2",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "moment": "^2.29.1"
   },
   "devDependencies": {
     "@azure/functions": "^1.2.3",
     "@types/bluebird": "^3.5.36",
     "@types/bluebird-global": "^3.5.13",
-    "@types/superagent": "^4.1.15",
     "@types/lodash": "^4.14.178",
+    "@types/superagent": "^4.1.15",
     "typescript": "^4.0.0"
   }
 }
