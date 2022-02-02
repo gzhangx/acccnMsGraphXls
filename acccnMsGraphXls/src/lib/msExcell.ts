@@ -54,7 +54,7 @@ export interface IMsExcelOps {
 
 export async function getMsExcel(opt: IMsGraphExcelItemOpt): Promise<IMsExcelOps> {
     const now = new Date().getTime();
-    async function getToken() : Promise<ITokenInfo> {
+    async function getToken(): Promise<ITokenInfo> {
         if (!opt.tokenInfo || opt.tokenInfo.expires_on < now / 1000) {
             const { getAccessToken } = getDefaultAuth(opt.tenantClientInfo);
             console.log('getting new token');
@@ -73,10 +73,10 @@ export async function getMsExcel(opt: IMsGraphExcelItemOpt): Promise<IMsExcelOps
         };
     }
 
-    function parseResp(r: {data:any}) {
+    function parseResp(r: { data: any }) {
         return r.data;
     }
-    async function doGet(url:string) {
+    async function doGet(url: string) {
         return await Axios.get(getUrl(url), await getHeaders())
             .then(parseResp);
     }
