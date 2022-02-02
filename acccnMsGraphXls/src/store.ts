@@ -10,7 +10,9 @@ async function createMsOps() {
             itemId: creds.gzuser.guestSheetId,
             userId: creds.gzuser.userId,
             tenantClientInfo: creds.gzuser,
-        })
+        });
+
+        await msExcelOps.createSheet(getToday());
     }
     return msExcelOps;
 }
@@ -19,7 +21,7 @@ function getToday(): string {
     const today = moment().format('YYYY-MM-DD');
     return today;
 }
-async function getAllDataNoCache() {
+export async function getAllDataNoCache() {
     const today = getToday();
     const ops = await createMsOps();
     const MAX = 10;

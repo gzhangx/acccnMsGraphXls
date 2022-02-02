@@ -78,7 +78,10 @@ export async function getMsExcel(opt: IMsGraphExcelItemOpt): Promise<IMsExcelOps
     }
     async function doGet(url: string) {
         return await Axios.get(getUrl(url), await getHeaders())
-            .then(parseResp);
+            .then(parseResp).catch(err => {
+                console.log(err);
+                throw err;
+            })
     }
 
     async function doPost(postFix: string, data: object) {
