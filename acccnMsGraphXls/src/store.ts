@@ -1,6 +1,6 @@
 import { IMsExcelOps, getMsExcel } from "./lib/msExcell";
 import * as creds from '../credentials.json';
-import * as moment from 'moment';
+import moment from 'moment';
 
 let msExcelOps: IMsExcelOps = null;
 let curSheetData: string[][] = null;
@@ -36,28 +36,21 @@ async function getAllDataNoCache() {
     }
 }
 
-async function loadData(): Promise<string[][]> {
+export async function loadData(): Promise<string[][]> {
     if (!curSheetData) {
         await getAllDataNoCache();
     }
     return curSheetData;
 }
 
-async function saveData(): Promise<void> {
+export async function saveData(): Promise<void> {
     const ops = await createMsOps();
     const today = getToday();
     ops.updateRange(today, `A1`, `C${curSheetData.length+1}`, curSheetData);
 }
 
-async function addAndSave(ary: string[]): Promise<void> {
+export async function addAndSave(ary: string[]): Promise<void> {
     let curSheetData = await loadData();
     curSheetData.push(ary);
     await saveData();
-}
-
-export const store = {
-    createMsOps,
-    loadData,
-    saveData,
-    addAndSave,
 }

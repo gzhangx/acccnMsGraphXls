@@ -6,6 +6,7 @@
     "rootDir": ".",
     "sourceMap": true,
     "resolveJsonModule": true,
+    "esModuleInterop": true,
     "strict": false
   }
 }

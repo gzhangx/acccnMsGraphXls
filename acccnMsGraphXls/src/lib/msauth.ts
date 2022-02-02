@@ -3,6 +3,8 @@ import { Axios } from "axios";
 import * as fs from "fs";
 import { get } from 'lodash';
 
+import creds from '../../credentials.json';
+
 export interface IAuthOpt {
     tenantId: string;
     client_id: string;
@@ -139,7 +141,7 @@ export function getDefaultAuth(opt: ITenantClientId) {
         tenantId,
         client_id,
         promptUser: msg => console.log(msg),
-        saveToken: async res => fs.writeFileSync('credentials.json', JSON.stringify(res, null, 2)),
-        loadToken: () => get(JSON.parse(fs.readFileSync('credentials.json').toString()),cpath),
+        saveToken: async res => fs.writeFileSync('credentials.json', JSON.stringify({ [cpath]:res }, null, 2)),
+        loadToken: () => get(creds, cpath), //get(JSON.parse(fs.readFileSync('credentials.json').toString()),cpath),
     });
 }
