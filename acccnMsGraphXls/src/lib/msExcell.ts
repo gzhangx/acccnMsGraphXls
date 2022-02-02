@@ -43,7 +43,16 @@ interface IReadSheetValues {
     valueTypes: string[][];
     values: string[][];
 }
-export async function getMsExcel(opt: IMsGraphExcelItemOpt) {
+
+export interface IMsExcelOps {
+    getWorkSheets: () => Promise<IWorkSheetInfo>;
+    createSheet: (name: string) => Promise<any>;
+    readRange: (name: string, from: string, to: string) => Promise<IReadSheetValues>;
+    getRangeFormat: (name: string, from: string, to: string) => Promise<IReadSheetValues>;
+    updateRange: (name: string, from: string, to: string, values: string[][]) => Promise<IReadSheetValues>;
+}
+
+export async function getMsExcel(opt: IMsGraphExcelItemOpt): Promise<IMsExcelOps> {
     const now = new Date().getTime();
     async function getToken() : Promise<ITokenInfo> {
         if (!opt.tokenInfo || opt.tokenInfo.expires_on < now / 1000) {
