@@ -69,7 +69,9 @@ export async function getMsExcel(opt: IMsGraphExcelItemOpt): Promise<IMsExcelOps
         return {
             headers: {
                 "Authorization": `Bearer ${tok.access_token}`
-            }
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
         };
     }
 
