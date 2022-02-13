@@ -38,8 +38,8 @@ export async function getAllDataNoCache() {
     }
 }
 
-export async function loadData(): Promise<string[][]> {
-    if (!curSheetData) {
+export async function loadData(force:boolean): Promise<string[][]> {
+    if (!curSheetData || force) {
         await getAllDataNoCache();
     }
     return curSheetData;

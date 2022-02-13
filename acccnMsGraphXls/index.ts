@@ -19,7 +19,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             await store.addAndSave([name, email, picture]);
         }
     } else if (action === 'loadData') {
-        responseMessage = await store.loadData();
+        responseMessage = await store.loadData(!!getPrm('force'));
     }
     
 
