@@ -55,7 +55,7 @@ export async function saveData(): Promise<void> {
 }
 
 export async function addAndSave(ary: string[]): Promise<void> {
-    let curSheetData = await loadData();
+    let curSheetData = await loadData(false);
     curSheetData.push(ary);
     await saveData();
 }
