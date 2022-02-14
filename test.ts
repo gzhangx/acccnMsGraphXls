@@ -1,6 +1,7 @@
 import { gtMsDir } from './acccnMsGraphXls/src/lib/msdir';
 
 import creds from './acccnMsGraphXls/credentials.json'
+const fs = require('fs');
 async function test() {
     const dir = await gtMsDir();
     await dir.doSearch(creds.dirInfo.NewGuestImageDir, `new`).then(r => {
@@ -9,7 +10,8 @@ async function test() {
     })
 
 
-    await dir.createFile('NewUserImages/test.txt', Buffer.from('testtest1234')).then(res => {
+    const buf = fs.readFileSync('d:/temp/IMG_0158.JPG');
+    await dir.createFile('NewUserImages/IMG_0158.jpg', buf).then(res => {
         console.log(res); 
     });
 
