@@ -1,4 +1,4 @@
-import { Axios } from "axios";
+import Axios, { AxiosRequestConfig } from "axios";
 //import * as  promise from 'bluebird';
 import * as fs from "fs";
 import { get } from 'lodash';
@@ -54,7 +54,6 @@ export function getAuth(opt: IAuthOpt) {
     const resource = 'https://graph.microsoft.com';
     const scope = opt.scope || 'Mail.Read openid profile User.Read email Files.ReadWrite.All Files.ReadWrite Files.Read Files.Read.All Files.Read.Selected Files.ReadWrite.AppFolder Files.ReadWrite.Selected';
     const queryCodeurl = `https://login.microsoftonline.com/${tenantId}/oauth2/token`;
-    const request = new Axios({});
 
     function getFormData(obj: {[id:string]:any}): string {        
         const keys = Object.keys(obj);
@@ -65,12 +64,12 @@ export function getAuth(opt: IAuthOpt) {
     }
     async function doPost(url: string, data: { [id: string]: any }): Promise<any> {
         const dataStr = getFormData(data);
-        return await request.post(url, dataStr, {
+        return await Axios.post(url, dataStr, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
         }).then(r => {
-            return JSON.parse(r.data);
+            return (r.data);
         });
     }
     async function getRefreshToken() {        
@@ -144,4 +143,83 @@ export function getDefaultAuth(opt: ITenantClientId) {
         saveToken: async res => fs.writeFileSync('credentials.json', JSON.stringify({ [cpath]:res }, null, 2)),
         loadToken: () => get(creds, cpath), //get(JSON.parse(fs.readFileSync('credentials.json').toString()),cpath),
     });
+}
+
+
+
+export interface IMsGraphConn {
+    tenantClientInfo: ITenantClientId;
+    userId: string;
+    tokenInfo?: ITokenInfo;
+}
+
+export interface IMsGraphOps {
+    doGet: (urlPostFix: string) => Promise<any>;
+    doPost: (urlPostFix: string, data: object) => Promise<any>;
+    doPut: (urlPostFix: string, data: object) => Promise<any>;
+}
+
+export async function getDefaultMsGraphConn(): Promise<IMsGraphOps> {
+    const defaultUser = creds.gzuser;
+    return getMsGraphConn({
+        tenantClientInfo: {
+            client_id: defaultUser.client_id,
+            tenantId: defaultUser.tenantId,
+        }, userId: defaultUser.userId,
+        tokenInfo: null,
+    });
+}
+
+export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {    
+    async function getToken(): Promise<ITokenInfo> {
+        const now = new Date().getTime();
+        console.log(`debugrm getMsGraphConn now=${now} exp=${opt.tokenInfo?.expires_on}`);
+        if (!opt.tokenInfo || opt.tokenInfo.expires_on < now / 1000) {
+            const { getAccessToken } = getDefaultAuth(opt.tenantClientInfo);
+            console.log('getting new token');
+            const tok = await getAccessToken();
+            opt.tokenInfo = tok;
+        }
+        return opt.tokenInfo;
+    }
+
+    async function getHeaders(): Promise<AxiosRequestConfig> {
+        const tok = await getToken();
+        return {
+            headers: {
+                "Authorization": `Bearer ${tok.access_token}`
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+        };
+    }
+
+    function parseResp(r: { data: any }) {
+        console.log(`debug rsp data=`);
+        console.log(r.data)
+        return r.data;
+    }
+    async function doGet(urlPostFix: string): Promise<any> {
+        return await Axios.get(getUserUrl(urlPostFix), await getHeaders())
+            .then(parseResp).catch(err => {
+                console.log(err);
+                throw err;
+            })
+    }
+
+    async function doPost(urlPostFix: string, data: object) {
+        return Axios.post(getUserUrl(urlPostFix), data, await getHeaders()).then(parseResp);
+    }
+
+    async function doPut(urlPostFix: string, data: object) {
+        return Axios.put(getUserUrl(urlPostFix), data, await getHeaders()).then(parseResp);
+    }
+    const getUserUrl = (urlPostFix: string) => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/${urlPostFix}`
+
+
+    return {
+        doGet,
+        doPost,
+        doPut,
+    }
 }

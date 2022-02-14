@@ -1,5 +1,5 @@
 import { getDefaultAuth, ITenantClientId, ITokenInfo } from "./msauth";
-import Axios from 'axios';
+import Axios, { AxiosRequestConfig } from 'axios';
 
 export interface IMsGraphDirItemOpt {
     tenantClientInfo: ITenantClientId;
@@ -25,7 +25,7 @@ export async function gtMsDir(opt: IMsGraphDirItemOpt): Promise<IMsDirOps> {
         return opt.tokenInfo;
     }
 
-    async function getHeaders() {
+    async function getHeaders(): Promise<AxiosRequestConfig>{
         const tok = await getToken();
         return {
             headers: {
@@ -49,9 +49,10 @@ export async function gtMsDir(opt: IMsGraphDirItemOpt): Promise<IMsDirOps> {
 
     async function doPost(itemId: string, action: string, data: object) {
         return Axios.post(getUrl(itemId, action), data, await getHeaders()).then(parseResp);
-    }
+    }    
 
-    const getUrl = (itemId: string, action: string) => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/drive/items('${itemId}')/${action}`;
+    const getDriveUrl = () => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/drive`
+    const getUrl = (itemId: string, action: string) => `${getDriveUrl()}/items('${itemId}')/${action}`;
    
 
     return {
@@ -104,4 +105,12 @@ async function doSearch(itemId: string, name: string, doGet: (itemId: string, ac
     : Promise<IFileSearchResult>{
     const res = await doGet(itemId, `search(q='${name}')`);
     return res as IFileSearchResult;
+}
+
+async function createFile(path: string, data: Buffer, opt: {
+    getDriveUrl: () => string;
+    getHeaders: () => Promise<AxiosRequestConfig>;
+    parseResp: (r: { data: any }) => any;
+}) {    
+    return Axios.put(`${opt.getDriveUrl()}/root:/${path}:/content`, data, await opt.getHeaders()).then(opt.parseResp);    
 }
