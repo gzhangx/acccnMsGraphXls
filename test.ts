@@ -15,6 +15,11 @@ async function test() {
         console.log(res); 
     });
 
+    await dir.getFile('01XX2KYFI2ZEYM7DGTM5FZGNFFNPF6DARZ').then(res => {
+        console.log(typeof res);
+        console.log(res.length);
+    })
+
 }
 
 test();

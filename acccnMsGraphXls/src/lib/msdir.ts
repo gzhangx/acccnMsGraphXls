@@ -6,6 +6,7 @@ export interface IMsDirOps {
     doPost: (itemId: string, action: string, data: object) => Promise<any>;
     doSearch: (itemId: string, name: string) => Promise<IFileSearchResult>;
     createFile: (path: string, data: Buffer) => Promise<any>;
+    getFile: (itemId: string) => Promise<any>;
 }
 
 export async function gtMsDir(): Promise<IMsDirOps> {
@@ -25,11 +26,18 @@ export async function gtMsDir(): Promise<IMsDirOps> {
     async function createFile(path: string, data: Buffer): Promise<IFileCreateResponse> {
         return ops.doPut(`drive/root:/${path}:/content`, data);
     }
+
+    async function getFile(itemId: string): Promise<any> {
+        //01XX2KYFI2ZEYM7DGTM5FZGNFFNPF6DARZ
+        return ops.doGet(getPostFix(itemId, 'content'));
+    }
+
     return {
         doGet,
         doPost,
         doSearch: (itemId: string, name: string) => doSearch(itemId, name, doGet),
         createFile,
+        getFile,
     }
 
 }

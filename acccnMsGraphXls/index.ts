@@ -20,6 +20,9 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         }
     } else if (action === 'loadData') {
         responseMessage = await store.loadData(!!getPrm('force'));
+    } else if (action === 'loadImage') {
+        context.res.setHeader("Content-Type", "image/png")
+        return context.res.raw(new Uint8Array([]));
     }
     
 
