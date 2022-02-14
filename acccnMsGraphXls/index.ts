@@ -7,8 +7,25 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     const getPrm = name => (req.query[name] || (req.body && req.body[name]));
     const action = getPrm('action');
 
+    function checkFileName() {
+        const fname = getPrm('name');
+        if (!fname) {
+            context.res = {
+                body: 'No filename',
+            };        
+            return null;
+        }
+        return fname.replace(/[^a-z0-9-_\/ \.]/gi, '');
+    }
     //await store.getAllDataNoCache();
     let responseMessage = null;
+
+    async function getMsDirOpt() {
+        const ops = await getMsDir(msg => {
+            context.log(msg);
+        });
+        return ops;
+    }
     if (action === "saveGuest") {
         const name = getPrm('name');
         const email = getPrm('email');
@@ -23,17 +40,45 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         responseMessage = await store.loadData(!!getPrm('force'));
     } else if (action === 'loadImage') {
         context.res.setHeader("Content-Type", "image/png")
-        let fname = getPrm('name');
-        if (!fname) {
-            context.res = {
-                body: 'No filename',
-            };        
-            return;
+        const fname = checkFileName();
+        if (!fname) return;        
+        
+        const ops = await getMsDirOpt();
+        const ary = await ops.getFileByPath(fname).catch(err => {
+            //console.log(err);
+            console.log(err.message);
+            console.log(err.response?.data?.toString());
+            console.log(`file is ${fname}`);
+            return [];
+        });
+        context.res = {
+            headers: {
+                "Content-Type": "image/png"
+            },
+            isRaw: true,
+            // status: 200, /* Defaults to 200 */
+            body: ary, //new Uint8Array(buffer)
+        };
+        return;
+    } else if (action === 'saveImage') {
+        const fname = checkFileName();
+        if (!fname) return;
+        let dataStr = getPrm('data') as string;
+        const sub = dataStr.indexOf('base64,');
+        if (sub > 0) {
+            dataStr = dataStr.substring(sub + 7).trim();
         }
-        fname = fname.replace(/[^a-z0-9-_ ]/gi, '');
-        const ops = await getMsDir();
-        const ary = await ops.getFileByPath(fname);
-        return context.res.raw(ary);
+        const buf = Buffer.from(dataStr, 'base64');
+        const ops = await getMsDirOpt();
+        const res = await ops.createFile(fname, buf);
+        context.res = {
+            body: {
+                id: res.id,
+                file: res.file,
+                size: res.size,
+            }
+        };
+        return;
     }
     
 

@@ -151,6 +151,7 @@ export interface IMsGraphConn {
     tenantClientInfo: ITenantClientId;
     userId: string;
     tokenInfo?: ITokenInfo;
+    logger: (msg: string) => void;
 }
 
 export interface IMsGraphOps {
@@ -159,7 +160,9 @@ export interface IMsGraphOps {
     doPut: (urlPostFix: string, data: object) => Promise<any>;
 }
 
-export async function getDefaultMsGraphConn(): Promise<IMsGraphOps> {
+export type ILogger = (msg: string) => void;
+
+export async function getDefaultMsGraphConn(logger: ILogger = x=>console.log(x)): Promise<IMsGraphOps> {
     const defaultUser = creds.gzuser;
     return getMsGraphConn({
         tenantClientInfo: {
@@ -167,16 +170,17 @@ export async function getDefaultMsGraphConn(): Promise<IMsGraphOps> {
             tenantId: defaultUser.tenantId,
         }, userId: defaultUser.userId,
         tokenInfo: null,
+        logger,
     });
 }
 
 export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {    
     async function getToken(): Promise<ITokenInfo> {
         const now = new Date().getTime();
-        console.log(`debugrm getMsGraphConn now=${now} exp=${opt.tokenInfo?.expires_on}`);
+        opt.logger(`debugrm getMsGraphConn now=${now} exp=${opt.tokenInfo?.expires_on}`);
         if (!opt.tokenInfo || opt.tokenInfo.expires_on < now / 1000) {
             const { getAccessToken } = getDefaultAuth(opt.tenantClientInfo);
-            console.log('getting new token');
+            opt.logger('getting new token');
             const tok = await getAccessToken();
             opt.tokenInfo = tok;
         }
@@ -200,7 +204,7 @@ export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {
     async function doGet(urlPostFix: string, fmt: (cfg:AxiosRequestConfig)=> AxiosRequestConfig = x=>x): Promise<any> {
         return await Axios.get(getUserUrl(urlPostFix), fmt(await getHeaders()))
             .then(parseResp).catch(err => {
-                console.log(err);
+                opt.logger(err);
                 throw err;
             })
     }

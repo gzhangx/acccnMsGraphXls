@@ -1,17 +1,17 @@
-import { getDefaultMsGraphConn } from "./msauth";
+import { getDefaultMsGraphConn, ILogger } from "./msauth";
 
 
 export interface IMsDirOps {
     doGet: (itemId: string, action: string) => Promise<any>;
     doPost: (itemId: string, action: string, data: object) => Promise<any>;
     doSearch: (itemId: string, name: string) => Promise<IFileSearchResult>;
-    createFile: (path: string, data: Buffer) => Promise<any>;
+    createFile: (path: string, data: Buffer) => Promise<IFileCreateResponse>;
     getFileById: (itemId: string) => Promise<Buffer>;
     getFileByPath: (itemId: string) => Promise<Buffer>;
 }
 
-export async function getMsDir(): Promise<IMsDirOps> {
-    const ops = await getDefaultMsGraphConn();
+export async function getMsDir(logger?: ILogger): Promise<IMsDirOps> {
+    const ops = await getDefaultMsGraphConn(logger);
     const getPostFix = (itemId: string, action: string) => `/drive/items('${itemId}')/${action}`
     async function doGet(itemId: string, action: string) : Promise<any> {
         return ops.doGet(getPostFix(itemId, action), x=>x);
