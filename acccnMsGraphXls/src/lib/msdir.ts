@@ -10,7 +10,7 @@ export interface IMsDirOps {
     getFileByPath: (itemId: string) => Promise<Buffer>;
 }
 
-export async function gtMsDir(): Promise<IMsDirOps> {
+export async function getMsDir(): Promise<IMsDirOps> {
     const ops = await getDefaultMsGraphConn();
     const getPostFix = (itemId: string, action: string) => `/drive/items('${itemId}')/${action}`
     async function doGet(itemId: string, action: string) : Promise<any> {

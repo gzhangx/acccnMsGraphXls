@@ -1,4 +1,5 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+import { getMsDir } from './src/lib/msdir';
 import * as store from './src/store';
 
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
@@ -22,7 +23,17 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         responseMessage = await store.loadData(!!getPrm('force'));
     } else if (action === 'loadImage') {
         context.res.setHeader("Content-Type", "image/png")
-        return context.res.raw(new Uint8Array([]));
+        let fname = getPrm('name');
+        if (!fname) {
+            context.res = {
+                body: 'No filename',
+            };        
+            return;
+        }
+        fname = fname.replace(/[^a-z0-9-_ ]/gi, '');
+        const ops = await getMsDir();
+        const ary = await ops.getFileByPath(fname);
+        return context.res.raw(ary);
     }
     
 
