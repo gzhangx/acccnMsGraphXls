@@ -6,14 +6,14 @@ export interface IMsDirOps {
     doPost: (itemId: string, action: string, data: object) => Promise<any>;
     doSearch: (itemId: string, name: string) => Promise<IFileSearchResult>;
     createFile: (path: string, data: Buffer) => Promise<any>;
-    getFile: (itemId: string) => Promise<any>;
+    getFile: (itemId: string) => Promise<Buffer>;
 }
 
 export async function gtMsDir(): Promise<IMsDirOps> {
     const ops = await getDefaultMsGraphConn();
     const getPostFix = (itemId: string, action: string) => `/drive/items('${itemId}')/${action}`
     async function doGet(itemId: string, action: string) : Promise<any> {
-        return ops.doGet(getPostFix(itemId, action));
+        return ops.doGet(getPostFix(itemId, action), x=>x);
     }
 
     async function doPost(itemId: string, action: string, data: object) {
@@ -27,9 +27,13 @@ export async function gtMsDir(): Promise<IMsDirOps> {
         return ops.doPut(`drive/root:/${path}:/content`, data);
     }
 
-    async function getFile(itemId: string): Promise<any> {
-        //01XX2KYFI2ZEYM7DGTM5FZGNFFNPF6DARZ
-        return ops.doGet(getPostFix(itemId, 'content'));
+    async function getFile(itemId: string): Promise<Buffer> {
+        return ops.doGet(getPostFix(itemId, 'content'), cfg => {
+            return {
+                ...cfg,
+                responseType: 'arraybuffer',
+            }
+        });
     }
 
     return {

@@ -154,7 +154,7 @@ export interface IMsGraphConn {
 }
 
 export interface IMsGraphOps {
-    doGet: (urlPostFix: string) => Promise<any>;
+    doGet: (urlPostFix: string, fmt: (cfg: AxiosRequestConfig) => AxiosRequestConfig) => Promise<any>;
     doPost: (urlPostFix: string, data: object) => Promise<any>;
     doPut: (urlPostFix: string, data: object) => Promise<any>;
 }
@@ -197,8 +197,8 @@ export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {
     function parseResp(r: { data: any }) {        
         return r.data;
     }
-    async function doGet(urlPostFix: string): Promise<any> {
-        return await Axios.get(getUserUrl(urlPostFix), await getHeaders())
+    async function doGet(urlPostFix: string, fmt: (cfg:AxiosRequestConfig)=> AxiosRequestConfig = x=>x): Promise<any> {
+        return await Axios.get(getUserUrl(urlPostFix), fmt(await getHeaders()))
             .then(parseResp).catch(err => {
                 console.log(err);
                 throw err;
