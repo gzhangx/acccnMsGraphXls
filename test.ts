@@ -9,8 +9,9 @@ async function test() {
         },
         userId: creds.gzuser.userId,
     });
-    dir.doGet(creds.dirInfo.NewGuestImageDir, `search(q='new')`).then(r => {
-        console.log(r);
+    dir.doSearch(creds.dirInfo.NewGuestImageDir, `new`).then(r => {
+        //console.log(JSON.stringify(r,null,2));
+        console.log(`len=${r.value.length} 0.size=${r.value[0].size} 0.size=${r.value[0].name} 0.folder.childcount=${r.value[0].folder?.childCount}` )
     })
 
 }
