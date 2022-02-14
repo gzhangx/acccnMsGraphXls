@@ -194,9 +194,7 @@ export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {
         };
     }
 
-    function parseResp(r: { data: any }) {
-        console.log(`debug rsp data=`);
-        console.log(r.data)
+    function parseResp(r: { data: any }) {        
         return r.data;
     }
     async function doGet(urlPostFix: string): Promise<any> {

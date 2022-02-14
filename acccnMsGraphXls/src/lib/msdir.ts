@@ -1,64 +1,35 @@
-import { getDefaultAuth, ITenantClientId, ITokenInfo } from "./msauth";
-import Axios, { AxiosRequestConfig } from 'axios';
+import { getDefaultMsGraphConn } from "./msauth";
 
-export interface IMsGraphDirItemOpt {
-    tenantClientInfo: ITenantClientId;
-    userId: string;
-    tokenInfo?: ITokenInfo;
-}
 
 export interface IMsDirOps {
     doGet: (itemId: string, action: string) => Promise<any>;
     doPost: (itemId: string, action: string, data: object) => Promise<any>;
     doSearch: (itemId: string, name: string) => Promise<IFileSearchResult>;
+    createFile: (path: string, data: Buffer) => Promise<any>;
 }
 
-export async function gtMsDir(opt: IMsGraphDirItemOpt): Promise<IMsDirOps> {
-    const now = new Date().getTime();
-    async function getToken(): Promise<ITokenInfo> {
-        if (!opt.tokenInfo || opt.tokenInfo.expires_on < now / 1000) {
-            const { getAccessToken } = getDefaultAuth(opt.tenantClientInfo);
-            console.log('getting new token');
-            const tok = await getAccessToken();
-            opt.tokenInfo = tok;
-        }
-        return opt.tokenInfo;
-    }
-
-    async function getHeaders(): Promise<AxiosRequestConfig>{
-        const tok = await getToken();
-        return {
-            headers: {
-                "Authorization": `Bearer ${tok.access_token}`
-            },
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
-        };
-    }
-
-    function parseResp(r: { data: any }) {
-        return r.data;
-    }
+export async function gtMsDir(): Promise<IMsDirOps> {
+    const ops = await getDefaultMsGraphConn();
+    const getPostFix = (itemId: string, action: string) => `/drive/items('${itemId}')/${action}`
     async function doGet(itemId: string, action: string) : Promise<any> {
-        return await Axios.get(getUrl(itemId, action), await getHeaders())
-            .then(parseResp).catch(err => {
-                console.log(err);
-                throw err;
-            })
+        return ops.doGet(getPostFix(itemId, action));
     }
 
     async function doPost(itemId: string, action: string, data: object) {
-        return Axios.post(getUrl(itemId, action), data, await getHeaders()).then(parseResp);
+        return ops.doPost(getPostFix(itemId, action), data);
     }    
 
-    const getDriveUrl = () => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/drive`
-    const getUrl = (itemId: string, action: string) => `${getDriveUrl()}/items('${itemId}')/${action}`;
+    //const getDriveUrl = () => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/drive`
+    //const getUrl = (itemId: string, action: string) => `${getDriveUrl()}/items('${itemId}')/${action}`;
    
-
+    async function createFile(path: string, data: Buffer) {
+        return ops.doPut(`drive/root:/${path}:/content`, data);
+    }
     return {
         doGet,
         doPost,
         doSearch: (itemId: string, name: string) => doSearch(itemId, name, doGet),
+        createFile,
     }
 
 }
@@ -107,10 +78,3 @@ async function doSearch(itemId: string, name: string, doGet: (itemId: string, ac
     return res as IFileSearchResult;
 }
 
-async function createFile(path: string, data: Buffer, opt: {
-    getDriveUrl: () => string;
-    getHeaders: () => Promise<AxiosRequestConfig>;
-    parseResp: (r: { data: any }) => any;
-}) {    
-    return Axios.put(`${opt.getDriveUrl()}/root:/${path}:/content`, data, await opt.getHeaders()).then(opt.parseResp);    
-}
