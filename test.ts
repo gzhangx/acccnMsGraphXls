@@ -15,9 +15,16 @@ async function test() {
         console.log(res); 
     });
 
-    await dir.getFile('01XX2KYFI2ZEYM7DGTM5FZGNFFNPF6DARZ').then(res => {
-        console.log(typeof res);
+    await dir.getFileById('01XX2KYFI2ZEYM7DGTM5FZGNFFNPF6DARZ').then(res => {
+        console.log(res instanceof Buffer);
         console.log(res.length);
+        fs.writeFileSync('d:\\temp\\testtest_byId.jpg', res);
+    })
+
+    await dir.getFileByPath('NewUserImages/IMG_0158.jpg').then(res => {
+        console.log(res instanceof Buffer);
+        console.log(res.length);
+        fs.writeFileSync('d:\\temp\\testtest_bypath.jpg', res);
     })
 
 }
