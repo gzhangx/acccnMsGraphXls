@@ -22,7 +22,7 @@ export async function gtMsDir(): Promise<IMsDirOps> {
     //const getDriveUrl = () => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/drive`
     //const getUrl = (itemId: string, action: string) => `${getDriveUrl()}/items('${itemId}')/${action}`;
    
-    async function createFile(path: string, data: Buffer) {
+    async function createFile(path: string, data: Buffer): Promise<IFileCreateResponse> {
         return ops.doPut(`drive/root:/${path}:/content`, data);
     }
     return {
@@ -78,3 +78,53 @@ async function doSearch(itemId: string, name: string, doGet: (itemId: string, ac
     return res as IFileSearchResult;
 }
 
+
+
+interface IFileCreateResponse {
+    '@odata.context': string;
+    '@microsoft.graph.downloadUrl': string;
+    createdDateTime: string;
+    eTag: string;
+    id: string;
+    lastModifiedDateTime: string;
+    name: string;
+    webUrl: string;
+    cTag: string;
+    size: number,
+    createdBy: {
+        application: {
+            id: string;
+            displayName: string;
+        };
+        user: {
+            email: string;
+            id: string;
+            displayName: string;
+        };
+    };
+    lastModifiedBy: {
+        application: {
+            id: string;
+            displayName: string;
+        };
+        user: {
+            email: string;
+            id: string;
+            displayName: string;
+        };
+    };
+    parentReference: {
+        driveId: string;
+        driveType: string;
+        id: string;
+        path: string;
+    },
+    file: {
+        mimeType: string; //'text/plain',
+        hashes: { quickXorHash: string; };
+    };
+    fileSystemInfo: {
+        createdDateTime: string;
+        lastModifiedDateTime: string;
+    }
+}
