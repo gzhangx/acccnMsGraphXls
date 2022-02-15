@@ -7,6 +7,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     const getPrm = name => (req.query[name] || (req.body && req.body[name]));
     const action = getPrm('action');
 
+    context.log(`action=${action}`);
     function checkFileName() {
         const fname = getPrm('name');
         if (!fname) {
@@ -69,11 +70,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             return returnError('bad file name, return')
         }
         const ops = await getMsDirOpt();
-        const ary = await ops.getFileByPath(fname).then(r => {
-            return {
-                array: r,
-            } as IDataWithError;
-        }).catch(getErrorHndl(`unable to load image ${fname}`)) as IDataWithError;
+        const ary = await ops.getFileByPath(fname).catch(getErrorHndl(`unable to load image ${fname}`)) as IDataWithError;
         if (ary.error) {
             responseMessage = ary.error;
         } else {
