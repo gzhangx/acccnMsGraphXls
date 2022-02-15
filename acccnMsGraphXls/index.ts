@@ -40,11 +40,12 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             body: msg
         };
     }
-    function getErrorHndl(context: string) {
+    function getErrorHndl(inf: string) {
         return (err): IDataWithError => {
             responseMessage = {
-                error: `${context} ${err.message}`
+                error: `${inf} ${err.message}`
             }
+            logger(responseMessage.error);
             return responseMessage;
         }
     }
@@ -52,6 +53,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         const name = getPrm('name');
         const email = getPrm('email');
         const picture = getPrm('picture') || '';
+        context.log(`saveGuest for ${name}:${email}`);
         if (!name || !email) {
             return returnError('Must have name or email');
         } else {
