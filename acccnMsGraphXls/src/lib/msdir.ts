@@ -8,6 +8,7 @@ export interface IMsDirOps {
     createFile: (path: string, data: Buffer) => Promise<IFileCreateResponse>;
     getFileById: (itemId: string) => Promise<Buffer>;
     getFileByPath: (itemId: string) => Promise<Buffer>;
+    createDir: (path: string, name: string) => Promise<IDirCreateResponse>;
 }
 
 export async function getMsDir(creds: IMsGraphCreds, logger?: ILogger): Promise<IMsDirOps> {
@@ -45,6 +46,14 @@ export async function getMsDir(creds: IMsGraphCreds, logger?: ILogger): Promise<
         });
     }
 
+    async function createDir(path: string, name: string): Promise<IDirCreateResponse> {
+        return ops.doPost(`/drive/root:/${path}:/children`, {
+            name,
+            "folder": {},
+            "@microsoft.graph.conflictBehavior": "replace"
+        });
+    }
+
     return {
         doGet,
         doPost,
@@ -52,47 +61,49 @@ export async function getMsDir(creds: IMsGraphCreds, logger?: ILogger): Promise<
         createFile,
         getFileById,
         getFileByPath,
+        createDir,
     }
 
 }
 
+export interface IDirCreateResponse {
+    "@odata.type": "#microsoft.graph.driveItem";
+    createdDateTime: string;
+    id: string;
+    lastModifiedDateTime: string;
+    name: string;
+    webUrl: string; //https://acccnusa-my.sharepoint.com/personal/gangzhang_acccn_org/Documents/NewUserImages,
+    size: number;
+    createdBy: {
+        user: {
+            email: string;
+            displayName: string;
+        };
+    };
+    lastModifiedBy: {
+        user: {
+            email: string;
+            displayName: string;
+        };
+    };
+    parentReference: {
+        driveId: string;
+        driveType: string; //"business",
+        id: string;
+    };
+    fileSystemInfo: {
+        createdDateTime: string;
+        lastModifiedDateTime: string;
+    };
+    folder?: {
+        childCount: number;
+    };
+    searchResult: object;
+}
 
 export interface IFileSearchResult {
     "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#Collection(driveItem)";
-    value: {
-        "@odata.type": "#microsoft.graph.driveItem";
-        createdDateTime: string;
-        id: string;
-        lastModifiedDateTime: string;
-        name: string;
-        webUrl: string; //https://acccnusa-my.sharepoint.com/personal/gangzhang_acccn_org/Documents/NewUserImages,
-        size: number;
-        createdBy: {
-            user: {
-                email: string;
-                displayName: string;
-            };
-        };
-        lastModifiedBy: {
-            user: {
-                email: string;
-                displayName: string;
-            };
-        };
-        parentReference: {
-            driveId: string;
-            driveType: string; //"business",
-            id: string;
-        };
-        fileSystemInfo: {
-            createdDateTime: string;
-            lastModifiedDateTime: string;
-        };
-        folder?: {
-            childCount: number;
-        };
-        searchResult: object;
-    }[];
+    value: IDirCreateResponse[];
 }
 async function doSearch(itemId: string, name: string, doGet: (itemId: string, action: string) => Promise<any>)
     : Promise<IFileSearchResult>{

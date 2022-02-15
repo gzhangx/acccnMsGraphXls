@@ -82,6 +82,19 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             }
         };
         return;
+    } else if (action === 'createDir') {
+        const fname = checkFileName();
+        if (!fname) return;
+        const path = getPrm('path');
+        const ops = await getMsDirOpt();
+        const res = await ops.createDir(path, fname);
+        context.res = {
+            body: {
+                id: res.id,
+                file: res.name,
+                size: res.size,
+            }
+        };
     }
     
 

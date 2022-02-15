@@ -31,6 +31,13 @@ async function test() {
     }).catch(err => {
         console.log(err.message)
         console.log(err.response)
+    });
+
+    await dir.createDir("NewUserImages", "dir111").then(res => {
+        console.log(res);
+    }).catch(err => {
+        console.log(err.message)
+        console.log(err.response)
     })
 
 }
