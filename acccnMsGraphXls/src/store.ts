@@ -69,7 +69,16 @@ export async function saveData(logger: ILogger): Promise<IReadSheetValues> {
 }
 
 export async function addAndSave(ary: string[], logger: ILogger): Promise<any> {
-    let curSheetData = await loadData(false, logger);
-    curSheetData.push(ary);
+    const curSheetData = await loadData(false, logger);
+    let found = false;
+    curSheetData.forEach(s => {
+        if (s[0] === ary[0]) {
+            found = true;
+            for (let i = 0; i < s.length; i++) {
+                s[i] = ary[i];
+            }
+        } 
+    });
+    if (!found) curSheetData.push(ary);
     return await saveData(logger);
 }
