@@ -2,6 +2,8 @@ import { getMsDir } from './acccnMsGraphXls/src/lib/msdir';
 import { getDefaultMsGraphConfig } from './acccnMsGraphXls/src/store';
 import { getMsExcel } from './acccnMsGraphXls/src/lib/msExcell';
 
+import * as store from './acccnMsGraphXls/src/store';
+
 //import creds from './acccnMsGraphXls/credentials.json'
 const fs = require('fs');
 async function test1() {
@@ -45,12 +47,23 @@ async function test1() {
 }
 
 
-async function testExcell() {
+async function testExcellOld() {
 
     const ops  = await getMsExcel({
         itemId: '01XX2KYFM4CINDUVRDIJGICH2EHDH5G3EY',
         tenantClientInfo: getDefaultMsGraphConfig(),
     }, msg=>console.log(msg));
     await ops.createSheet('2022-01=tet');
+}
+
+async function testExcell() {
+    const logger = (msg: string) => console.log(msg);
+    await store.loadData(true, logger);
+    await store.addAndSave(['test1', 'test2', 'test3'], logger).catch(err => {
+        console.log(err.message);
+        console.log(Object.keys(err));
+        console.log(err.isAxiosError);
+        console.log(err.response?.data);
+    })
 }
 testExcell();
