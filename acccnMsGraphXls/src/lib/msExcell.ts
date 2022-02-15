@@ -1,5 +1,4 @@
-import { getDefaultAuth, IMsGraphCreds, ILogger, getDefaultMsGraphConn } from "./msauth";
-import Axios from 'axios';
+import { IMsGraphCreds, ILogger, getDefaultMsGraphConn } from "./msauth";
 
 export interface IMsGraphExcelItemOpt {
     tenantClientInfo: IMsGraphCreds;
@@ -76,11 +75,11 @@ export async function getMsExcel(opt: IMsGraphExcelItemOpt, logger: ILogger): Pr
     }
 
     async function getRangeFormat(name: string, from: string, to: string): Promise<IReadSheetValues> {
-        return ops.doGet((`/${name}/range(address='${from}:${to}')/format`));
+        return ops.doGet((`${sheetUrl}/${name}/range(address='${from}:${to}')/format`));
     }
 
     async function updateRange(name: string, from: string, to: string, values: string[][]): Promise<IReadSheetValues> {
-        return ops.doPatch((`${name}/range(address='${from}:${to}')`), {
+        return ops.doPatch((`${sheetUrl}/${name}/range(address='${from}:${to}')`), {
             values,
         });
     }
