@@ -56,9 +56,7 @@ export async function getAllDataNoCache(logger:(msg: string) => void) {
 }
 
 export async function loadData(force:boolean, logger: (msg:string)=>void): Promise<string[][]> {
-    if (!curSheetData || force) {
         await getAllDataNoCache(logger);
-    }
     return curSheetData;
 }
 
