@@ -50,7 +50,7 @@ async function testExcell() {
     const ops  = await getMsExcel({
         itemId: '01XX2KYFM4CINDUVRDIJGICH2EHDH5G3EY',
         tenantClientInfo: getDefaultMsGraphConfig(),
-    });
+    }, msg=>console.log(msg));
     await ops.createSheet('2022-01=tet');
 }
 testExcell();

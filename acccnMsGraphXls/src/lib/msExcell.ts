@@ -1,4 +1,4 @@
-import { getDefaultAuth, IMsGraphCreds, ITokenInfo, getDefaultMsGraphConn } from "./msauth";
+import { getDefaultAuth, IMsGraphCreds, ILogger, getDefaultMsGraphConn } from "./msauth";
 import Axios from 'axios';
 
 export interface IMsGraphExcelItemOpt {
@@ -50,8 +50,8 @@ export interface IMsExcelOps {
     updateRange: (name: string, from: string, to: string, values: string[][]) => Promise<IReadSheetValues>;
 }
 
-export async function getMsExcel(opt: IMsGraphExcelItemOpt): Promise<IMsExcelOps> {
-    const ops = await getDefaultMsGraphConn(opt.tenantClientInfo);    
+export async function getMsExcel(opt: IMsGraphExcelItemOpt, logger: ILogger): Promise<IMsExcelOps> {
+    const ops = await getDefaultMsGraphConn(opt.tenantClientInfo, logger);    
 
     //const getUrl = (postFix: string) => `https://graph.microsoft.com/v1.0/users('${opt.tenantClientInfo.userId}')/drive/items('${opt.itemId}')/workbook/worksheets${postFix}`;
     const sheetUrl = `drive/items('${opt.itemId}')/workbook/worksheets`;

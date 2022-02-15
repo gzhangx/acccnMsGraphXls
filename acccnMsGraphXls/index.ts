@@ -20,10 +20,11 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     //await store.getAllDataNoCache();
     let responseMessage = null;
 
+    function logger(msg: string) {
+        context.log(msg);
+    }
     async function getMsDirOpt() {
-        const ops = await getMsDir(store.getDefaultMsGraphConfig(), msg => {
-            context.log(msg);
-        });
+        const ops = await getMsDir(store.getDefaultMsGraphConfig(), logger);
         return ops;
     }
     if (action === "saveGuest") {
@@ -34,10 +35,10 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             responseMessage = 'Must have name or email'
         } else {
             responseMessage = `user ${name} Saved`;
-            await store.addAndSave([name, email, picture]);
+            await store.addAndSave([name, email, picture], logger);
         }
     } else if (action === 'loadData') {
-        responseMessage = await store.loadData(!!getPrm('force'));
+        responseMessage = await store.loadData(!!getPrm('force'),logger);
     } else if (action === 'loadImage') {
         context.res.setHeader("Content-Type", "image/png")
         const fname = checkFileName();

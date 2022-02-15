@@ -1,4 +1,4 @@
-import { IMsGraphCreds } from "./lib/msauth";
+import { IMsGraphCreds, ILogger } from "./lib/msauth";
 import { IMsExcelOps, getMsExcel } from "./lib/msExcell";
 //import * as creds from '../credentials.json';
 import moment from 'moment';
@@ -17,14 +17,19 @@ export function getDefaultMsGraphConfig(): IMsGraphCreds {
 }
 
 
-async function createMsOps() {
+async function createMsOps(logger: ILogger) {
     if (!msExcelOps) {
         msExcelOps = await getMsExcel({
             itemId: process.env['gzuser.guestSheetId'],
             tenantClientInfo: getDefaultMsGraphConfig(),
-        });
+        }, logger);
 
-        await msExcelOps.createSheet(getToday());
+        const today = getToday();
+        logger(`creating today ${today}`);
+        await msExcelOps.createSheet(today).catch(err => {
+            logger(`error creating today ${today}: ${err.message}`);
+            logger(err);
+        })
     }
     return msExcelOps;
 }
@@ -33,9 +38,9 @@ function getToday(): string {
     const today = moment().format('YYYY-MM-DD');
     return today;
 }
-export async function getAllDataNoCache() {
+export async function getAllDataNoCache(logger:(msg: string) => void) {
     const today = getToday();
-    const ops = await createMsOps();
+    const ops = await createMsOps(logger);
     const MAX = 10;
     curSheetData = [];
     for (let from = 0; ; from += MAX) {
@@ -50,15 +55,15 @@ export async function getAllDataNoCache() {
     }
 }
 
-export async function loadData(force:boolean): Promise<string[][]> {
+export async function loadData(force:boolean, logger: (msg:string)=>void): Promise<string[][]> {
     if (!curSheetData || force) {
-        await getAllDataNoCache();
+        await getAllDataNoCache(logger);
     }
     return curSheetData;
 }
 
-export async function saveData(): Promise<void> {
-    const ops = await createMsOps();
+export async function saveData(logger: ILogger): Promise<void> {
+    const ops = await createMsOps(logger);
     const today = getToday();
     await ops.updateRange(today, `A1`, `C${curSheetData.length }`, curSheetData).catch(err => {
         console.log(err);
@@ -66,8 +71,8 @@ export async function saveData(): Promise<void> {
     })
 }
 
-export async function addAndSave(ary: string[]): Promise<void> {
-    let curSheetData = await loadData(false);
+export async function addAndSave(ary: string[], logger: ILogger): Promise<void> {
+    let curSheetData = await loadData(false, logger);
     curSheetData.push(ary);
-    await saveData();
+    await saveData(logger);
 }
