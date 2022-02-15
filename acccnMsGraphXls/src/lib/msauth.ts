@@ -30,6 +30,12 @@ async function delay(ms: number) {
     });
 }
 
+export function GGraphError(message = "") {
+    this.name = "GGraphError";
+    this.message = message;
+}
+GGraphError.prototype = Error.prototype;
+
 export function getAuth(opt: IAuthOpt) {
     const tenantId = opt.tenantId;
     const client_id = opt.client_id;
@@ -161,6 +167,25 @@ export async function getDefaultMsGraphConn(tenantClientInfo: IMsGraphCreds, log
     });
 }
 
+export function axiosErrorProcessing(err: any) : string {
+    let msg = err.message;
+    const steps = ['response', 'data', 'message'];
+    msg = steps.reduce((acc, step) => {
+        if (acc.err) {
+            acc.err = acc.err[step];
+
+            if (typeof acc.err === 'string') {
+                acc.msg = `${acc.msg} ${acc.err}`
+            }
+        }
+        return acc;
+    }, {
+        err,
+        msg,
+    });
+    return msg;
+}
+
 export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {    
     async function getToken(): Promise<ITokenInfo> {
         const now = new Date().getTime();
@@ -188,24 +213,33 @@ export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {
     function parseResp(r: { data: any }) {        
         return r.data;
     }
-    async function doGet(urlPostFix: string, fmt: (cfg:AxiosRequestConfig)=> AxiosRequestConfig = x=>x): Promise<any> {
-        return await Axios.get(getUserUrl(urlPostFix), fmt(await getHeaders()))
-            .then(parseResp).catch(err => {
-                opt.logger(err);
-                throw err;
-            })
+
+    function errProc(context: string) {
+        return err => {
+            const message = axiosErrorProcessing(err);
+            opt.logger(`error on ${context}: ${message}`);
+            throw new GGraphError(message);
+        }
+    }
+    async function doGet(urlPostFix: string, fmt: (cfg: AxiosRequestConfig) => AxiosRequestConfig = x => x): Promise<any> {
+        const uri = getUserUrl(urlPostFix);
+        return await Axios.get(uri, fmt(await getHeaders()))
+            .then(parseResp).catch(errProc(uri));
     }
 
     async function doPost(urlPostFix: string, data: object) {
-        return Axios.post(getUserUrl(urlPostFix), data, await getHeaders()).then(parseResp);
+        const uri = getUserUrl(urlPostFix);
+        return Axios.post(uri, data, await getHeaders()).then(parseResp).catch(errProc(uri));
     }
 
     async function doPut(urlPostFix: string, data: object) {
-        return Axios.put(getUserUrl(urlPostFix), data, await getHeaders()).then(parseResp);
+        const uri = getUserUrl(urlPostFix);
+        return Axios.put(uri, data, await getHeaders()).then(parseResp).catch(errProc(uri));
     }
 
     async function doPatch(urlPostFix: string, data: object) {
-        return Axios.patch(getUserUrl(urlPostFix), data, await getHeaders()).then(parseResp);
+        const uri = getUserUrl(urlPostFix);
+        return Axios.patch(uri, data, await getHeaders()).then(parseResp).catch(errProc(uri));
     }
 
     const getUserUrl = (urlPostFix: string) => `https://graph.microsoft.com/v1.0/users('${opt.tenantClientInfo.userId}')/${urlPostFix}`

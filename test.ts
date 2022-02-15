@@ -1,7 +1,7 @@
 import { getMsDir } from './acccnMsGraphXls/src/lib/msdir';
 import { getDefaultMsGraphConfig } from './acccnMsGraphXls/src/store';
 import { getMsExcel } from './acccnMsGraphXls/src/lib/msExcell';
-
+import * as auth from './acccnMsGraphXls/src/lib/msauth';
 import * as store from './acccnMsGraphXls/src/store';
 
 //import creds from './acccnMsGraphXls/credentials.json'
@@ -57,6 +57,17 @@ async function testExcellOld() {
 }
 
 async function testExcell() {
+
+    const testerr = {
+        message: 'msg1',
+        
+    }
+
+    
+    const rr = auth.axiosErrorProcessing(testerr);
+    if (rr) {
+        return console.log(rr);
+    }
     const logger = (msg: string) => console.log(msg);
     await store.loadData(true, logger);
     await store.addAndSave(['test1', 'test2', 'test3'], logger).catch(err => {

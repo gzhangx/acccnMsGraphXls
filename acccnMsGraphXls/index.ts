@@ -27,46 +27,68 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         const ops = await getMsDir(store.getDefaultMsGraphConfig(), logger);
         return ops;
     }
+
+    type IDataWithError = {
+        error?: string;
+        length?: number;
+    }
+
+    function returnError(msg) {
+        context.log(msg);
+        context.res = {
+            // status: 200, /* Defaults to 200 */
+            body: msg
+        };
+    }
+    function getErrorHndl(context: string) {
+        return (err): IDataWithError => {
+            responseMessage = {
+                error: `${context} ${err.message}`
+            }
+            return responseMessage;
+        }
+    }
     if (action === "saveGuest") {
         const name = getPrm('name');
         const email = getPrm('email');
         const picture = getPrm('picture') || '';
         if (!name || !email) {
-            responseMessage = 'Must have name or email'
+            return returnError('Must have name or email');
         } else {
             responseMessage = `user ${name} Saved`;
-            await store.addAndSave([name, email, picture], logger);
+            await store.addAndSave([name, email, picture], logger).catch(getErrorHndl(`user save error for ${name}:${email}`));
         }
     } else if (action === 'loadData') {
-        responseMessage = await store.loadData(!!getPrm('force'),logger);
+        responseMessage = await store.loadData(!!getPrm('force'), logger).catch(getErrorHndl('loadData Error'));
     } else if (action === 'loadImage') {
         context.res.setHeader("Content-Type", "image/png")
         const fname = checkFileName();
-        if (!fname) {
-            context.log('bad file name, return')
-            return;
+        if (!fname) {            
+            return returnError('bad file name, return')
         }
         const ops = await getMsDirOpt();
-        const ary = await ops.getFileByPath(fname).catch(err => {
-            //console.log(err);
-            context.log(`Load image error ${err.message}`);
-            context.log(err.response?.data?.toString());
-            context.log(`file is ${fname}, return empty since it has error`);
-            return [];
-        });
-        context.log(`image size ${ary.length}`)
-        context.res = {
-            headers: {
-                "Content-Type": "image/png"
-            },
-            isRaw: true,
-            // status: 200, /* Defaults to 200 */
-            body: ary, //new Uint8Array(buffer)
-        };
-        return;
+        const ary = await ops.getFileByPath(fname).then(r => {
+            return {
+                array: r,
+            } as IDataWithError;
+        }).catch(getErrorHndl(`unable to load image ${fname}`)) as IDataWithError;
+        if (ary.error) {
+            responseMessage = ary.error;
+        } else {
+            context.log(`image size ${ary.length}`)
+            context.res = {
+                headers: {
+                    "Content-Type": "image/png"
+                },
+                isRaw: true,
+                // status: 200, /* Defaults to 200 */
+                body: ary, //new Uint8Array(buffer)
+            };
+            return;
+        }        
     } else if (action === 'saveImage') {
         const fname = checkFileName();
-        if (!fname) return;
+        if (!fname) return returnError('No filename for saveImage');
         let dataStr = getPrm('data') as string;
         const sub = dataStr.indexOf('base64,');
         if (sub > 0) {
@@ -74,28 +96,36 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         }
         const buf = Buffer.from(dataStr, 'base64');
         const ops = await getMsDirOpt();
-        const res = await ops.createFile(fname, buf);
-        context.res = {
-            body: {
-                id: res.id,
-                file: res.file,
-                size: res.size,
-            }
-        };
+        try {
+            const res = await ops.createFile(fname, buf);
+            context.res = {
+                body: {
+                    id: res.id,
+                    file: res.file,
+                    size: res.size,
+                }
+            };
+        } catch (err) {
+            getErrorHndl(`saveImage createFile error for ${fname} ${buf.length}`)(err);
+        }
         return;
     } else if (action === 'createDir') {
         const fname = checkFileName();
-        if (!fname) return;
-        const path = getPrm('path');
+        if (!fname) return returnError('createDir: null file name');
+        const path = getPrm('path') || '';
         const ops = await getMsDirOpt();
-        const res = await ops.createDir(path, fname);
-        context.res = {
-            body: {
-                id: res.id,
-                file: res.name,
-                size: res.size,
-            }
-        };
+        try {
+            const res = await ops.createDir(path, fname);
+            context.res = {
+                body: {
+                    id: res.id,
+                    file: res.name,
+                    size: res.size,
+                }
+            };
+        } catch (err) {
+            getErrorHndl(`createDir error for ${fname} ${path}`)(err);
+        }
     }
     
 
