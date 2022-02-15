@@ -21,7 +21,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     let responseMessage = null;
 
     async function getMsDirOpt() {
-        const ops = await getMsDir(msg => {
+        const ops = await getMsDir(store.getDefaultMsGraphConfig(), msg => {
             context.log(msg);
         });
         return ops;

@@ -1,23 +1,16 @@
 import Axios, { AxiosRequestConfig } from "axios";
 //import * as  promise from 'bluebird';
-import * as fs from "fs";
-import { get } from 'lodash';
-
-import creds from '../../credentials.json';
 
 export interface IAuthOpt {
     tenantId: string;
     client_id: string;
+    refresh_token: string; //optional
     promptUser: (msg: string|object, info:object) => void;
     saveToken: (token: object) => Promise<void>;
-    loadToken: () => Promise<IAuthCreds>;
     scope?: string;
     pollTime?: number;
 }
 
-interface IAuthCreds {
-    refresh_token: string;
-}
 interface ICodeWaitInfo {
     device_code: string;
     message: object;
@@ -49,7 +42,6 @@ export function getAuth(opt: IAuthOpt) {
 
     const promptUser = opt.promptUser || console.log;
     const saveToken = opt.saveToken;
-    const loadToken = opt.loadToken;
 
     const resource = 'https://graph.microsoft.com';
     const scope = opt.scope || 'Mail.Read openid profile User.Read email Files.ReadWrite.All Files.ReadWrite Files.Read Files.Read.All Files.Read.Selected Files.ReadWrite.AppFolder Files.ReadWrite.Selected';
@@ -106,8 +98,7 @@ export function getAuth(opt: IAuthOpt) {
     }
 
     async function getAccessToken(): Promise<ITokenInfo> {
-        const credentials = await loadToken();;
-        const { refresh_token } = credentials;
+        const { refresh_token } = opt;
         const form = {
             scope,
             resource,
@@ -127,48 +118,44 @@ export function getAuth(opt: IAuthOpt) {
     }
 }
 
-
-export interface ITenantClientId{
+export interface IMsGraphCreds {
+    userId: string;
     tenantId: string;
     client_id: string;
-    credentialsPath?: string;
+
+    refresh_token: string;
 }
-export function getDefaultAuth(opt: ITenantClientId) {
-    const { tenantId, client_id } = opt;
-    const cpath = opt.credentialsPath || 'msgraph';
+export function getDefaultAuth(opt: IMsGraphCreds) {
+    const { tenantId, client_id, refresh_token } = opt;
     return getAuth({
         tenantId,
         client_id,
+        refresh_token,
         promptUser: msg => console.log(msg),
-        saveToken: async res => fs.writeFileSync('credentials.json', JSON.stringify({ [cpath]:res }, null, 2)),
-        loadToken: () => get(creds, cpath), //get(JSON.parse(fs.readFileSync('credentials.json').toString()),cpath),
+        saveToken: async res => console.log(res),        
     });
 }
 
 
 
 export interface IMsGraphConn {
-    tenantClientInfo: ITenantClientId;
-    userId: string;
+    tenantClientInfo: IMsGraphCreds;
     tokenInfo?: ITokenInfo;
     logger: (msg: string) => void;
 }
 
 export interface IMsGraphOps {
-    doGet: (urlPostFix: string, fmt: (cfg: AxiosRequestConfig) => AxiosRequestConfig) => Promise<any>;
+    doGet: (urlPostFix: string, fmt?: (cfg: AxiosRequestConfig) => AxiosRequestConfig) => Promise<any>;
     doPost: (urlPostFix: string, data: object) => Promise<any>;
     doPut: (urlPostFix: string, data: object) => Promise<any>;
+    doPatch: (urlPostFix: string, data: object) => Promise<any>;
 }
 
 export type ILogger = (msg: string) => void;
 
-export async function getDefaultMsGraphConn(logger: ILogger = x=>console.log(x)): Promise<IMsGraphOps> {
-    const defaultUser = creds.gzuser;
+export async function getDefaultMsGraphConn(tenantClientInfo: IMsGraphCreds, logger: ILogger = x=>console.log(x)): Promise<IMsGraphOps> {
     return getMsGraphConn({
-        tenantClientInfo: {
-            client_id: defaultUser.client_id,
-            tenantId: defaultUser.tenantId,
-        }, userId: defaultUser.userId,
+        tenantClientInfo,
         tokenInfo: null,
         logger,
     });
@@ -216,12 +203,18 @@ export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {
     async function doPut(urlPostFix: string, data: object) {
         return Axios.put(getUserUrl(urlPostFix), data, await getHeaders()).then(parseResp);
     }
-    const getUserUrl = (urlPostFix: string) => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/${urlPostFix}`
+
+    async function doPatch(urlPostFix: string, data: object) {
+        return Axios.patch(getUserUrl(urlPostFix), data, await getHeaders()).then(parseResp);
+    }
+
+    const getUserUrl = (urlPostFix: string) => `https://graph.microsoft.com/v1.0/users('${opt.tenantClientInfo.userId}')/${urlPostFix}`
 
 
     return {
         doGet,
         doPost,
         doPut,
+        doPatch,
     }
 }

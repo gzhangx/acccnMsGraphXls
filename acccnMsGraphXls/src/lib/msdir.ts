@@ -1,4 +1,4 @@
-import { getDefaultMsGraphConn, ILogger } from "./msauth";
+import { getDefaultMsGraphConn, ILogger, IMsGraphCreds } from "./msauth";
 
 
 export interface IMsDirOps {
@@ -10,8 +10,8 @@ export interface IMsDirOps {
     getFileByPath: (itemId: string) => Promise<Buffer>;
 }
 
-export async function getMsDir(logger?: ILogger): Promise<IMsDirOps> {
-    const ops = await getDefaultMsGraphConn(logger);
+export async function getMsDir(creds: IMsGraphCreds, logger?: ILogger): Promise<IMsDirOps> {
+    const ops = await getDefaultMsGraphConn(creds, logger);
     const getPostFix = (itemId: string, action: string) => `/drive/items('${itemId}')/${action}`
     async function doGet(itemId: string, action: string) : Promise<any> {
         return ops.doGet(getPostFix(itemId, action), x=>x);

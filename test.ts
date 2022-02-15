@@ -1,9 +1,9 @@
 import { getMsDir } from './acccnMsGraphXls/src/lib/msdir';
-
-import creds from './acccnMsGraphXls/credentials.json'
+import { getDefaultMsGraphConfig } from './acccnMsGraphXls/src/store';
+//import creds from './acccnMsGraphXls/credentials.json'
 const fs = require('fs');
 async function test() {
-    const dir = await getMsDir(msg => {
+    const dir = await getMsDir(getDefaultMsGraphConfig(), msg => {
         console.log(msg);
     });
     //await dir.doSearch(creds.dirInfo.NewGuestImageDir, `new`).then(r => {
@@ -23,10 +23,14 @@ async function test() {
     //    fs.writeFileSync('d:\\temp\\testtest_byId.jpg', res);
     //})
 
+    console.log('getting img');
     await dir.getFileByPath('NewUserImages/IMG_0158.jpg').then(res => {
         console.log(res instanceof Buffer);
         console.log(res.length);
         fs.writeFileSync('d:\\temp\\testtest_bypath.jpg', res);
+    }).catch(err => {
+        console.log(err.message)
+        console.log(err.response)
     })
 
 }

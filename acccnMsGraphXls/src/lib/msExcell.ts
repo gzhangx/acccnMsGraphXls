@@ -1,11 +1,9 @@
-import { getDefaultAuth, ITenantClientId, ITokenInfo } from "./msauth";
+import { getDefaultAuth, IMsGraphCreds, ITokenInfo, getDefaultMsGraphConn } from "./msauth";
 import Axios from 'axios';
 
 export interface IMsGraphExcelItemOpt {
-    tenantClientInfo: ITenantClientId;
-    userId: string;
+    tenantClientInfo: IMsGraphCreds;
     itemId: string;
-    tokenInfo?: ITokenInfo;
     sheetInfo?: IWorkSheetInfo;
 }
 
@@ -53,51 +51,13 @@ export interface IMsExcelOps {
 }
 
 export async function getMsExcel(opt: IMsGraphExcelItemOpt): Promise<IMsExcelOps> {
-    const now = new Date().getTime();
-    async function getToken(): Promise<ITokenInfo> {
-        if (!opt.tokenInfo || opt.tokenInfo.expires_on < now / 1000) {
-            const { getAccessToken } = getDefaultAuth(opt.tenantClientInfo);
-            console.log('getting new token');
-            const tok = await getAccessToken();
-            opt.tokenInfo = tok;
-        }
-        return opt.tokenInfo;
-    }
+    const ops = await getDefaultMsGraphConn(opt.tenantClientInfo);    
 
-    async function getHeaders() {
-        const tok = await getToken();
-        return {
-            headers: {
-                "Authorization": `Bearer ${tok.access_token}`
-            },
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
-        };
-    }
+    //const getUrl = (postFix: string) => `https://graph.microsoft.com/v1.0/users('${opt.tenantClientInfo.userId}')/drive/items('${opt.itemId}')/workbook/worksheets${postFix}`;
+    const sheetUrl = `drive/items('${opt.itemId}')/workbook/worksheets`;
 
-    function parseResp(r: { data: any }) {
-        return r.data;
-    }
-    async function doGet(url: string) {
-        return await Axios.get(getUrl(url), await getHeaders())
-            .then(parseResp).catch(err => {
-                console.log(err);
-                throw err;
-            })
-    }
-
-    async function doPost(postFix: string, data: object) {
-        return Axios.post(getUrl(postFix), data, await getHeaders()).then(parseResp);
-    }
-
-    async function doPatch(postFix: string, data: object) {
-        return Axios.patch(getUrl(postFix), data, await getHeaders())
-            .then(parseResp);
-    }
-
-    const getUrl = (postFix: string) => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/drive/items('${opt.itemId}')/workbook/worksheets${postFix}`;
     async function getWorkSheets(): Promise<IWorkSheetInfo> {
-        return await doGet('');
+        return await ops.doGet(sheetUrl);
     }
 
     async function createSheet(name: string): Promise<any> {
@@ -106,21 +66,21 @@ export async function getMsExcel(opt: IMsGraphExcelItemOpt): Promise<IMsExcelOps
         }
         const found = (opt.sheetInfo.value.find(v => v.name === name));
         if (found) return found;
-        return await doPost('', {
+        return await ops.doPost(sheetUrl, {
             name
         });
     }
 
     async function readRange(name: string, from: string, to: string): Promise<IReadSheetValues> {
-        return doGet((`/${name}/range(address='${from}:${to}')`));
+        return ops.doGet((`${sheetUrl}/${name}/range(address='${from}:${to}')`));
     }
 
     async function getRangeFormat(name: string, from: string, to: string): Promise<IReadSheetValues> {
-        return doGet((`/${name}/range(address='${from}:${to}')/format`));
+        return ops.doGet((`/${name}/range(address='${from}:${to}')/format`));
     }
 
     async function updateRange(name: string, from: string, to: string, values: string[][]): Promise<IReadSheetValues> {
-        return doPatch((`/${name}/range(address='${from}:${to}')`), {
+        return ops.doPatch((`${name}/range(address='${from}:${to}')`), {
             values,
         });
     }

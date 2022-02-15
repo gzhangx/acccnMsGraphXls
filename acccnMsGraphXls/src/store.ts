@@ -1,15 +1,27 @@
+import { IMsGraphCreds } from "./lib/msauth";
 import { IMsExcelOps, getMsExcel } from "./lib/msExcell";
-import * as creds from '../credentials.json';
+//import * as creds from '../credentials.json';
 import moment from 'moment';
 
 let msExcelOps: IMsExcelOps = null;
 let curSheetData: string[][] = null;
+
+// gzuser.guestSheetId
+export function getDefaultMsGraphConfig(): IMsGraphCreds {
+    return {
+        client_id: process.env['msgp1.CLIENT_ID'],
+        refresh_token: process.env['msgp1.refresh_token'],
+        tenantId: process.env['msgp1.tenantId'],
+        userId: process.env['msgp1.userID'],
+    }
+}
+
+
 async function createMsOps() {
     if (!msExcelOps) {
         msExcelOps = await getMsExcel({
-            itemId: creds.gzuser.guestSheetId,
-            userId: creds.gzuser.userId,
-            tenantClientInfo: creds.gzuser,
+            itemId: process.env['gzuser.guestSheetId'],
+            tenantClientInfo: getDefaultMsGraphConfig(),
         });
 
         await msExcelOps.createSheet(getToday());
