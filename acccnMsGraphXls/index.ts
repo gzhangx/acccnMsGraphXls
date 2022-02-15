@@ -41,16 +41,19 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     } else if (action === 'loadImage') {
         context.res.setHeader("Content-Type", "image/png")
         const fname = checkFileName();
-        if (!fname) return;        
-        
+        if (!fname) {
+            context.log('bad file name, return')
+            return;
+        }
         const ops = await getMsDirOpt();
         const ary = await ops.getFileByPath(fname).catch(err => {
             //console.log(err);
-            console.log(err.message);
-            console.log(err.response?.data?.toString());
-            console.log(`file is ${fname}`);
+            context.log(`Load image error ${err.message}`);
+            context.log(err.response?.data?.toString());
+            context.log(`file is ${fname}, return empty since it has error`);
             return [];
         });
+        context.log(`image size ${ary.length}`)
         context.res = {
             headers: {
                 "Content-Type": "image/png"
