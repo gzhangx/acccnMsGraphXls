@@ -60,7 +60,14 @@ async function testExcell() {
 
     const testerr = {
         message: 'msg1',
-        
+        response: {
+            data: {
+                message: 'datamsg',
+                error: {
+                    message:'errmsg'
+                }
+            }
+        }
     }
 
     

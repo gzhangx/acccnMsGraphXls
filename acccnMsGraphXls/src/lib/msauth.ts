@@ -1,4 +1,5 @@
 import Axios, { AxiosRequestConfig } from "axios";
+import { get } from 'lodash';
 //import * as  promise from 'bluebird';
 
 export interface IAuthOpt {
@@ -168,21 +169,24 @@ export async function getDefaultMsGraphConn(tenantClientInfo: IMsGraphCreds, log
 }
 
 export function axiosErrorProcessing(err: any) : string {
-    let msg = err.message;
-    const steps = ['response', 'data', 'message'];
-    msg = steps.reduce((acc, step) => {
-        if (acc.err) {
-            acc.err = acc.err[step];
-
-            if (typeof acc.err === 'string') {
-                acc.msg = `${acc.msg} ${acc.err}`
+    function doSteps(obj: object, initialMsg: string, steps: string[]) : string {
+        const msg = steps.reduce((acc, step) => {
+            const cur = get(acc.obj, step) as string;
+            if (typeof cur === 'string') {
+                if (acc.msg)
+                    acc.msg = `${acc.msg} ${cur}`;
+                else
+                    acc.msg = cur;
             }
-        }
-        return acc;
-    }, {
-        err,
-        msg,
-    });
+            return acc;
+        }, {
+            obj,
+            msg: initialMsg
+        });
+        return msg.msg;
+    }
+    const steps = ['response.data.message', 'response.data.error.message'];
+    const msg = doSteps(err, err.message, steps);
     return msg;
 }
 

@@ -20,7 +20,7 @@ interface IWorkSheetInfo {
     
 }
 
-interface IReadSheetValues {
+export interface IReadSheetValues {
     '@odata.context': string; //https://graph.microsoft.com/v1.0/$metadata#workbookRange
     '@odata.type': string; //'#microsoft.graph.workbookRange',
     '@odata.id': string;

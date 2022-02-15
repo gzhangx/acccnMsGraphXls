@@ -1,5 +1,5 @@
 import { IMsGraphCreds, ILogger } from "./lib/msauth";
-import { IMsExcelOps, getMsExcel } from "./lib/msExcell";
+import { IMsExcelOps, getMsExcel, IReadSheetValues } from "./lib/msExcell";
 //import * as creds from '../credentials.json';
 import moment from 'moment';
 
@@ -62,17 +62,14 @@ export async function loadData(force:boolean, logger: (msg:string)=>void): Promi
     return curSheetData;
 }
 
-export async function saveData(logger: ILogger): Promise<void> {
+export async function saveData(logger: ILogger): Promise<IReadSheetValues> {
     const ops = await createMsOps(logger);
     const today = getToday();
-    await ops.updateRange(today, `A1`, `C${curSheetData.length }`, curSheetData).catch(err => {
-        console.log(err);
-        throw err;
-    })
+    return await ops.updateRange(today, `A1`, `C${curSheetData.length}`, curSheetData);
 }
 
-export async function addAndSave(ary: string[], logger: ILogger): Promise<void> {
+export async function addAndSave(ary: string[], logger: ILogger): Promise<any> {
     let curSheetData = await loadData(false, logger);
     curSheetData.push(ary);
-    await saveData(logger);
+    return await saveData(logger);
 }
