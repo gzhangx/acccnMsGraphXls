@@ -37,6 +37,15 @@ export function GGraphError(message = "") {
 }
 GGraphError.prototype = Error.prototype;
 
+export function encodeSharedUrl(sharingUrl: string): string {
+    //see https://docs.microsoft.com/en-us/graph/api/shares-get?view=graph-rest-1.0&irgwc=1&OCID=AID2200057_aff_7593_1243925&tduid=(ir__ksd0kmgl9ckf6nyskg6fwnqce32xt3umkhw9f9gn00)(7593)(1243925)(je6NUbpObpQ-XTpQa0NuXTfWX1VU38TMYg)()&irclickid=_ksd0kmgl9ckf6nyskg6fwnqce32xt3umkhw9f9gn00&tabs=http#encoding-sharing-urls&ranMID=24542&ranEAID=je6NUbpObpQ&ranSiteID=je6NUbpObpQ-XTpQa0NuXTfWX1VU38TMYg&epi=je6NUbpObpQ-XTpQa0NuXTfWX1VU38TMYg   
+    const base64Value = Buffer.from(sharingUrl).toString('base64');
+    //string encodedUrl = "u!" + base64Value .TrimEnd('=').Replace('/', '_').Replace('+', '-');
+    const encodedUrl = base64Value.replace(/=/g, '').replace(/\//g, '_').replace(/\+/g, '-');
+    const resUrl = `u!${encodedUrl}`;
+    return resUrl;
+}
+
 export function getAuth(opt: IAuthOpt) {
     const tenantId = opt.tenantId;
     const client_id = opt.client_id;
