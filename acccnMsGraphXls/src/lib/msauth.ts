@@ -154,7 +154,7 @@ function getAuth(opt: IAuthOpt) {
 }
 
 export interface IMsGraphCreds {
-    userId: string;
+    //userId: string;
     tenantId: string;
     client_id: string;
 

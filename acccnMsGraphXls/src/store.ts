@@ -12,7 +12,7 @@ export function getDefaultMsGraphConfig(): IMsGraphCreds {
         client_id: process.env['msgp1.CLIENT_ID'],
         refresh_token: process.env['msgp1.refresh_token'],
         tenantId: process.env['msgp1.tenantId'],
-        userId: process.env['msgp1.userID'],
+        //userId: process.env['msgp1.userID'],
     }
 }
 

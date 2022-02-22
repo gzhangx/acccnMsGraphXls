@@ -1,4 +1,4 @@
-import { getMsDir } from './acccnMsGraphXls/src/lib/msdir';
+import { getMsDir, IMsGraphOps } from './acccnMsGraphXls/src/lib/msdir';
 import { getDefaultMsGraphConfig } from './acccnMsGraphXls/src/store';
 import { getMsExcel } from './acccnMsGraphXls/src/lib/msExcell';
 import * as auth from './acccnMsGraphXls/src/lib/msauth';
@@ -8,49 +8,36 @@ import * as store from './acccnMsGraphXls/src/store';
 const fs = require('fs');
 
 
+function getDefaultDirOpt(): IMsGraphOps {
+    return {
+        logger: msg => console.log(msg),
+        driveId: '',
+        sharedUrl: 'https://acccnusa.sharepoint.com/:f:/r/sites/newcomer/Shared%20Documents/%E6%96%B0%E4%BA%BA%E8%B5%84%E6%96%99?csf=1&web=1&e=8k5NUF',
+    }
+}
 async function testPathFile() {
 
-    const aut = await auth.getDefaultMsGraphConn(getDefaultMsGraphConfig());
-    await aut.getSharedItemInfo('https://acccnusa.sharepoint.com/:f:/r/sites/newcomer/Shared%20Documents/%E6%96%B0%E4%BA%BA%E8%B5%84%E6%96%99?csf=1&web=1&e=8k5NUF').then(res => {
-        console.log(res.parentReference.driveId);
-        console.log(`id=${res.id}`);
-    })
-    const dir = await getMsDir(getDefaultMsGraphConfig(), msg => {
-        console.log(msg);
-    });
+    //const aut = await auth.getDefaultMsGraphConn(getDefaultMsGraphConfig());
+    //await aut.getSharedItemInfo('https://acccnusa.sharepoint.com/:f:/r/sites/newcomer/Shared%20Documents/%E6%96%B0%E4%BA%BA%E8%B5%84%E6%96%99?csf=1&web=1&e=8k5NUF').then(res => {
+    //    console.log(res.parentReference.driveId);
+    //    console.log(`id=${res.id}`);
+    //})
+    const dir = await getMsDir(getDefaultMsGraphConfig(), getDefaultDirOpt());
     
-    //await dir.createFile("NewUserImages/test.text", Buffer.from('testtest'));
-
-    const sharingUrl = 'https://acccnusa.sharepoint.com/:f:/r/sites/newcomer/Shared%20Documents/%E6%96%B0%E4%BA%BA%E8%B5%84%E6%96%99?csf=1&web=1&e=aGy7vS';
-    //see https://docs.microsoft.com/en-us/graph/api/shares-get?view=graph-rest-1.0&irgwc=1&OCID=AID2200057_aff_7593_1243925&tduid=(ir__ksd0kmgl9ckf6nyskg6fwnqce32xt3umkhw9f9gn00)(7593)(1243925)(je6NUbpObpQ-XTpQa0NuXTfWX1VU38TMYg)()&irclickid=_ksd0kmgl9ckf6nyskg6fwnqce32xt3umkhw9f9gn00&tabs=http#encoding-sharing-urls&ranMID=24542&ranEAID=je6NUbpObpQ&ranSiteID=je6NUbpObpQ-XTpQa0NuXTfWX1VU38TMYg&epi=je6NUbpObpQ-XTpQa0NuXTfWX1VU38TMYg   
-    const base64Value = Buffer.from(sharingUrl).toString('base64');
-    console.log(base64Value);
-    console.log(Buffer.from(base64Value,'base64').toString())
-    //string encodedUrl = "u!" + base64Value .TrimEnd('=').Replace('/', '_').Replace('+', '-');
-    const encodedUrl = base64Value.replace(/=/g, '').replace(/\//g, '_').replace(/\+/g, '-');
-    const resUrl = encodeSharedUrl(sharingUrl);
-    console.log(resUrl);
+    await dir.createDir("新人资料","tempNewUserImages");
+    await dir.createFile("新人资料/tempNewUserImages/testdir/test.text", Buffer.from('testtest'));
 
 
 }
 
-function encodeSharedUrl(sharingUrl: string) : string {    
-    //see https://docs.microsoft.com/en-us/graph/api/shares-get?view=graph-rest-1.0&irgwc=1&OCID=AID2200057_aff_7593_1243925&tduid=(ir__ksd0kmgl9ckf6nyskg6fwnqce32xt3umkhw9f9gn00)(7593)(1243925)(je6NUbpObpQ-XTpQa0NuXTfWX1VU38TMYg)()&irclickid=_ksd0kmgl9ckf6nyskg6fwnqce32xt3umkhw9f9gn00&tabs=http#encoding-sharing-urls&ranMID=24542&ranEAID=je6NUbpObpQ&ranSiteID=je6NUbpObpQ-XTpQa0NuXTfWX1VU38TMYg&epi=je6NUbpObpQ-XTpQa0NuXTfWX1VU38TMYg   
-    const base64Value = Buffer.from(sharingUrl).toString('base64');    
-    //string encodedUrl = "u!" + base64Value .TrimEnd('=').Replace('/', '_').Replace('+', '-');
-    const encodedUrl = base64Value.replace(/=/g, '').replace(/\//g, '_').replace(/\+/g, '-');
-    const resUrl = `u!${encodedUrl}`;
-    return resUrl;
-}
+
 
 testPathFile().catch(err => {
     console.log(err);
  })
 
 async function test1() {
-    const dir = await getMsDir(getDefaultMsGraphConfig(), msg => {
-        console.log(msg);
-    });
+    const dir = await getMsDir(getDefaultMsGraphConfig(), getDefaultDirOpt());
     //await dir.doSearch(creds.dirInfo.NewGuestImageDir, `new`).then(r => {
     //    //console.log(JSON.stringify(r,null,2));
     //    console.log(`len=${r.value.length} 0.size=${r.value[0].size} 0.size=${r.value[0].name} 0.folder.childcount=${r.value[0].folder?.childCount}` )

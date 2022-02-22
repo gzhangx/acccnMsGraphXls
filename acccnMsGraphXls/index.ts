@@ -2,6 +2,7 @@ import { AzureFunction, Context, HttpRequest } from "@azure/functions"
 import { getMsDir } from './src/lib/msdir';
 import * as store from './src/store';
 
+const driveId = 'b!hXChu0dhsUaKN7pqt1bD3_OeafGaVT1FohEO2dBMjAY5XO0eLYVxS7CH5lgurhQd';
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
     context.log('HTTP trigger function processed a request.');
     const getPrm = name => (req.query[name] || (req.body && req.body[name]));
@@ -25,7 +26,10 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         context.log(msg);
     }
     async function getMsDirOpt() {
-        const ops = await getMsDir(store.getDefaultMsGraphConfig(), logger);
+        const ops = await getMsDir(store.getDefaultMsGraphConfig(), {
+            logger,
+            driveId,
+        });
         return ops;
     }
 
@@ -108,24 +112,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             getErrorHndl(`saveImage createFile error for ${fname} ${buf.length}`)(err);
         }
         return;
-    } else if (action === 'createDir') {
-        const fname = checkFileName();
-        if (!fname) return returnError('createDir: null file name');
-        const path = getPrm('path') || '';
-        const ops = await getMsDirOpt();
-        try {
-            const res = await ops.createDir(path, fname);
-            context.res = {
-                body: {
-                    id: res.id,
-                    file: res.name,
-                    size: res.size,
-                }
-            };
-        } catch (err) {
-            getErrorHndl(`createDir error for ${fname} ${path}`)(err);
-        }
-    }
+    } 
     
 
     context.res = {

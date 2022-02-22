@@ -1,44 +1,64 @@
-import { getDefaultMsGraphConn, ILogger, IMsGraphCreds } from "./msauth";
+import { getDefaultMsGraphConn, ILogger, IMsGraphCreds, IDriveItemInfo } from "./msauth";
 
 
 export interface IMsDirOps {
-    doGet: (itemId: string, action: string) => Promise<any>;
-    doPost: (itemId: string, action: string, data: object) => Promise<any>;
-    doSearch: (itemId: string, name: string) => Promise<IFileSearchResult>;
+    //doGet: (itemId: string, action: string) => Promise<any>;
+    //doPost: (itemId: string, action: string, data: object) => Promise<any>;
+    //doSearch: (itemId: string, name: string) => Promise<IFileSearchResult>;
     createFile: (path: string, data: Buffer) => Promise<IFileCreateResponse>;
-    getFileById: (itemId: string) => Promise<Buffer>;
+    //getFileById: (itemId: string) => Promise<Buffer>;
     getFileByPath: (itemId: string) => Promise<Buffer>;
     createDir: (path: string, name: string) => Promise<IDirCreateResponse>;
 }
 
-export async function getMsDir(creds: IMsGraphCreds, logger?: ILogger): Promise<IMsDirOps> {
-    const ops = await getDefaultMsGraphConn(creds, logger);
-    const getPostFix = (itemId: string, action: string) => `/drive/items('${itemId}')/${action}`
-    async function doGet(itemId: string, action: string) : Promise<any> {
-        return ops.doGet(getPostFix(itemId, action), x=>x);
+export interface IMsGraphOps {
+    logger: ILogger;
+    sharedUrl?: string;
+    driveId?: string;
+}
+export async function getMsDir(creds: IMsGraphCreds, prms: IMsGraphOps): Promise<IMsDirOps> {
+    const ops = await getDefaultMsGraphConn(creds, prms.logger);
+    
+    // const getPostFix = (itemId: string, action: string) => `/drive/items('${itemId}')/${action}`    
+    // async function doGet(itemId: string, action: string) : Promise<any> {
+    //     return ops.doGet(getPostFix(itemId, action), x=>x);
+    // }
+
+    // async function doPost(itemId: string, action: string, data: object) {
+    //     return ops.doPost(getPostFix(itemId, action), data);
+    // }    
+
+    // async function getFileById(itemId: string): Promise<Buffer> {
+    //     return ops.doGet(getPostFix(itemId, 'content'), cfg => {
+    //         return {
+    //             ...cfg,
+    //             responseType: 'arraybuffer',
+    //         }
+    //     });
+    // }
+
+    let driveId = prms.driveId;
+    if (!driveId) {
+        const itmInf = await ops.getSharedItemInfo(prms.sharedUrl);
+        if (!itmInf.parentReference) {
+            const message = `bad sharedUrl ${prms.sharedUrl}`;
+            prms.logger(message);
+            throw {
+                message
+            };
+        }
+        driveId = itmInf.parentReference.driveId;
     }
-
-    async function doPost(itemId: string, action: string, data: object) {
-        return ops.doPost(getPostFix(itemId, action), data);
-    }    
-
     //const getDriveUrl = () => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/drive`
     //const getUrl = (itemId: string, action: string) => `${getDriveUrl()}/items('${itemId}')/${action}`;
    
+    const getDriveUrl = (path: string) => `/drives/${driveId}/root:/${encodeURIComponent(path.replace(/['`;\/\\",()&^$#!%*=+[\]{}|:<>?]/g, ''))}`;
     async function createFile(path: string, data: Buffer): Promise<IFileCreateResponse> {
-        return ops.doPut(`drive/root:/${path}:/content`, data);
+        return ops.doPut(`${getDriveUrl(path)}:/content`, data);
     }
-
-    async function getFileById(itemId: string): Promise<Buffer> {
-        return ops.doGet(getPostFix(itemId, 'content'), cfg => {
-            return {
-                ...cfg,
-                responseType: 'arraybuffer',
-            }
-        });
-    }
+    
     async function getFileByPath(fname: string): Promise<Buffer> {
-        return ops.doGet(`/drive/root:/${fname}:/content`, cfg => {
+        return ops.doGet(`${getDriveUrl(fname)}:/content`, cfg => {
             return {
                 ...cfg,
                 responseType: 'arraybuffer',
@@ -47,7 +67,7 @@ export async function getMsDir(creds: IMsGraphCreds, logger?: ILogger): Promise<
     }
 
     async function createDir(path: string, name: string): Promise<IDirCreateResponse> {
-        return ops.doPost(`/drive/root:/${path}:/children`, {
+        return ops.doPost(`${getDriveUrl(path)}:/children`, {
             name,
             "folder": {},
             "@microsoft.graph.conflictBehavior": "replace"
@@ -55,11 +75,11 @@ export async function getMsDir(creds: IMsGraphCreds, logger?: ILogger): Promise<
     }
 
     return {
-        doGet,
-        doPost,
-        doSearch: (itemId: string, name: string) => doSearch(itemId, name, doGet),
+        //doGet,
+        //doPost,
+        //doSearch: (itemId: string, name: string) => doSearch(itemId, name, doGet),
         createFile,
-        getFileById,
+        //getFileById,
         getFileByPath,
         createDir,
     }
