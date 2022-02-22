@@ -36,11 +36,13 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         length?: number;
     }
 
-    function returnError(msg) {
-        context.log(msg);
+    function returnError(error) {
+        context.log(error);
         context.res = {
             // status: 200, /* Defaults to 200 */
-            body: msg
+            body: {
+                error: error
+            }
         };
     }
     function getErrorHndl(inf: string) {
@@ -54,10 +56,10 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     }
     if (action === "saveGuest") {
         const name = getPrm('name');
-        const email = getPrm('email');
+        const email = getPrm('email') || '';
         const picture = getPrm('picture') || '';
         context.log(`saveGuest for ${name}:${email}`);
-        if (!name || !email) {
+        if (!name) {
             return returnError('Must have name or email');
         } else {
             responseMessage = `user ${name} Saved`;
