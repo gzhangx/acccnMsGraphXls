@@ -227,22 +227,26 @@ export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {
     }
     async function doGet(urlPostFix: string, fmt: (cfg: AxiosRequestConfig) => AxiosRequestConfig = x => x): Promise<any> {
         const uri = getUserUrl(urlPostFix);
+        opt.logger(`GET ${uri}`);
         return await Axios.get(uri, fmt(await getHeaders()))
             .then(parseResp).catch(errProc(uri));
     }
 
     async function doPost(urlPostFix: string, data: object) {
         const uri = getUserUrl(urlPostFix);
+        opt.logger(`POST ${uri}`);
         return Axios.post(uri, data, await getHeaders()).then(parseResp).catch(errProc(uri));
     }
 
     async function doPut(urlPostFix: string, data: object) {
         const uri = getUserUrl(urlPostFix);
+        opt.logger(`PUT ${uri}`);
         return Axios.put(uri, data, await getHeaders()).then(parseResp).catch(errProc(uri));
     }
 
     async function doPatch(urlPostFix: string, data: object) {
         const uri = getUserUrl(urlPostFix);
+        opt.logger(`PATCH ${uri}`);
         return Axios.patch(uri, data, await getHeaders()).then(parseResp).catch(errProc(uri));
     }
 
