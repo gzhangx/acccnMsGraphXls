@@ -11,13 +11,13 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     context.log(`action=${action}`);
     function checkFileName() {
         const fname = getPrm('name');
-        if (!fname) {
+        if (!fname || !fname.trim()) {
             context.res = {
                 body: 'No filename',
             };        
             return null;
         }
-        return fname.replace(/[^a-z0-9-_\/ \.]/gi, '');
+        return fname;
     }
     //await store.getAllDataNoCache();
     let responseMessage = null;
