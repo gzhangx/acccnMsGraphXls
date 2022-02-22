@@ -284,7 +284,7 @@ export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {
     const getUserUrl = (urlPostFix: string) => `${ROOT_URL}/${urlPostFix}`;
 
     async function getSharedItemInfo(sharedUrl: string): Promise<IDriveItemInfo> {
-        return doGet(`shares/${encodeSharedUrl(sharedUrl)}`).then((r: IDriveItemInfo) => {
+        return doGet(`shares/${encodeSharedUrl(sharedUrl)}/driveItem`).then((r: IDriveItemInfo) => {
             return r;
         });        
     }
