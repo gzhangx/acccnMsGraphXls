@@ -9,6 +9,12 @@ const fs = require('fs');
 
 
 async function testPathFile() {
+
+    const aut = await auth.getDefaultMsGraphConn(getDefaultMsGraphConfig());
+    await aut.getSharedItemInfo('https://acccnusa.sharepoint.com/:f:/r/sites/newcomer/Shared%20Documents/%E6%96%B0%E4%BA%BA%E8%B5%84%E6%96%99?csf=1&web=1&e=8k5NUF').then(res => {
+        console.log(res.parentReference.driveId);
+        console.log(`id=${res.id}`);
+    })
     const dir = await getMsDir(getDefaultMsGraphConfig(), msg => {
         console.log(msg);
     });

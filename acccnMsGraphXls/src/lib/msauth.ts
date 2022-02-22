@@ -46,7 +46,26 @@ export function encodeSharedUrl(sharingUrl: string): string {
     return resUrl;
 }
 
-export function getAuth(opt: IAuthOpt) {
+export interface IDriveItemInfo {
+    id: string;
+    //lastModifiedDateTime: string;
+    name: string;
+    //webUrl: string;    
+    //size: number;
+    //"createdBy":     
+    //"lastModifiedBy"
+    parentReference: {
+        driveId: string;
+        //driveType: string; // "documentLibrary",
+        id: string;
+        //path: string;"/drives/b!hXChu0dhsUaKN7pqt1bD3_OeafGaVT1FohEO2dBMjAY5XO0eLYVxS7CH5lgurhQd/root:/新人资料"
+    };    
+    //folder: {
+    //    childCount: number;
+    //};
+}
+
+function getAuth(opt: IAuthOpt) {
     const tenantId = opt.tenantId;
     const client_id = opt.client_id;
     if (!tenantId) throw {
@@ -165,6 +184,7 @@ export interface IMsGraphOps {
     doPost: (urlPostFix: string, data: object) => Promise<any>;
     doPut: (urlPostFix: string, data: object) => Promise<any>;
     doPatch: (urlPostFix: string, data: object) => Promise<any>;
+    getSharedItemInfo: (sharedUrl: string) => Promise<IDriveItemInfo>;
 }
 
 export type ILogger = (msg: string) => void;
@@ -259,13 +279,20 @@ export async function getMsGraphConn(opt: IMsGraphConn): Promise<IMsGraphOps> {
         return Axios.patch(uri, data, await getHeaders()).then(parseResp).catch(errProc(uri));
     }
 
-    const getUserUrl = (urlPostFix: string) => `https://graph.microsoft.com/v1.0/users('${opt.tenantClientInfo.userId}')/${urlPostFix}`
+    const ROOT_URL = 'https://graph.microsoft.com/v1.0';
+    //const getUserUrl = (urlPostFix: string) => `${ROOT_URL}/users('${opt.tenantClientInfo.userId}')/${urlPostFix}`;
+    const getUserUrl = (urlPostFix: string) => `${ROOT_URL}/${urlPostFix}`;
 
-
+    async function getSharedItemInfo(sharedUrl: string): Promise<IDriveItemInfo> {
+        return doGet(`shares/${encodeSharedUrl(sharedUrl)}`).then((r: IDriveItemInfo) => {
+            return r;
+        });        
+    }
     return {
         doGet,
         doPost,
         doPut,
         doPatch,
+        getSharedItemInfo,
     }
 }
