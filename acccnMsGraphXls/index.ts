@@ -1,5 +1,5 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
-import { getMsDir } from './src/lib/msdir';
+import { getMsDir, IMsGraphOps } from './src/lib/msdir';
 import * as store from './src/store';
 
 const driveId = 'b!hXChu0dhsUaKN7pqt1bD3_OeafGaVT1FohEO2dBMjAY5XO0eLYVxS7CH5lgurhQd';
@@ -21,15 +21,13 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     }
     //await store.getAllDataNoCache();
     let responseMessage = null;
-
-    function logger(msg: string) {
-        context.log(msg);
-    }
+    
+    const msDirPrm: IMsGraphOps = {
+        logger: msg=>context.log(msg),
+        driveId,
+    };
     async function getMsDirOpt() {
-        const ops = await getMsDir(store.getDefaultMsGraphConfig(), {
-            logger,
-            driveId,
-        });
+        const ops = await getMsDir(store.getDefaultMsGraphConfig(), msDirPrm);
         return ops;
     }
 
@@ -50,7 +48,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             responseMessage = {
                 error: `${inf} ${err.message}`
             }
-            logger(responseMessage.error);
+            context.log(responseMessage.error);
             return responseMessage;
         }
     }
@@ -63,10 +61,10 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             return returnError('Must have name or email');
         } else {
             responseMessage = `user ${name} Saved`;
-            await store.addAndSave([name, email, picture], logger).catch(getErrorHndl(`user save error for ${name}:${email}`));
+            await store.addAndSave([name, email, picture], msDirPrm).catch(getErrorHndl(`user save error for ${name}:${email}`));
         }
     } else if (action === 'loadData') {
-        responseMessage = await store.loadData(!!getPrm('force'), logger).catch(getErrorHndl('loadData Error'));
+        responseMessage = await store.loadData(msDirPrm).catch(getErrorHndl('loadData Error'));
     } else if (action === 'loadImage') {
         context.res.setHeader("Content-Type", "image/png")
         const fname = checkFileName();

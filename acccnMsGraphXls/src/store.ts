@@ -1,5 +1,7 @@
 import { IMsGraphCreds, ILogger } from "./lib/msauth";
 import { IMsExcelOps, getMsExcel, IReadSheetValues } from "./lib/msExcell";
+import { IMsGraphOps } from './lib/msdir';
+
 //import * as creds from '../credentials.json';
 import moment from 'moment';
 
@@ -17,18 +19,18 @@ export function getDefaultMsGraphConfig(): IMsGraphCreds {
 }
 
 
-async function createMsOps(logger: ILogger) {
+async function createMsOps(prm: IMsGraphOps) {
     if (!msExcelOps) {
         msExcelOps = await getMsExcel({
-            itemId: process.env['gzuser.guestSheetId'],
+            fileName:'新人资料/新人资料表汇总new.xlsx',
             tenantClientInfo: getDefaultMsGraphConfig(),
-        }, logger);
+        }, prm);
 
         const today = getToday();
-        logger(`creating today ${today}`);
+        prm.logger(`creating today ${today}`);
         await msExcelOps.createSheet(today).catch(err => {
-            logger(`error creating today ${today}: ${err.message}`);
-            logger(err);
+            prm.logger(`error creating today ${today}: ${err.message}`);
+            prm.logger(err);
         })
     }
     return msExcelOps;
@@ -38,9 +40,9 @@ function getToday(): string {
     const today = moment().format('YYYY-MM-DD');
     return today;
 }
-export async function getAllDataNoCache(logger:(msg: string) => void) {
+export async function getAllDataNoCache(prm: IMsGraphOps) {
     const today = getToday();
-    const ops = await createMsOps(logger);
+    const ops = await createMsOps(prm);
     const MAX = 10;
     curSheetData = [];
     for (let from = 0; ; from += MAX) {
@@ -55,19 +57,19 @@ export async function getAllDataNoCache(logger:(msg: string) => void) {
     }
 }
 
-export async function loadData(force:boolean, logger: (msg:string)=>void): Promise<string[][]> {
-        await getAllDataNoCache(logger);
+export async function loadData(prm: IMsGraphOps): Promise<string[][]> {
+        await getAllDataNoCache(prm);
     return curSheetData;
 }
 
-export async function saveData(logger: ILogger): Promise<IReadSheetValues> {
-    const ops = await createMsOps(logger);
+export async function saveData(prm:IMsGraphOps): Promise<IReadSheetValues> {
+    const ops = await createMsOps(prm);
     const today = getToday();
     return await ops.updateRange(today, `A1`, `C${curSheetData.length}`, curSheetData);
 }
 
-export async function addAndSave(ary: string[], logger: ILogger): Promise<any> {
-    const curSheetData = await loadData(false, logger);
+export async function addAndSave(ary: string[], prm: IMsGraphOps): Promise<any> {
+    const curSheetData = await loadData(prm);
     let found = false;
     curSheetData.forEach(s => {
         if (s[0] === ary[0]) {
@@ -78,5 +80,5 @@ export async function addAndSave(ary: string[], logger: ILogger): Promise<any> {
         } 
     });
     if (!found) curSheetData.push(ary);
-    return await saveData(logger);
+    return await saveData(prm);
 }

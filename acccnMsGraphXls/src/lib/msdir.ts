@@ -16,6 +16,9 @@ export interface IMsGraphOps {
     sharedUrl?: string;
     driveId?: string;
 }
+
+export const getDriveUrl = (driveId: string, path: string) => `drives/${driveId}/root:/${encodeURIComponent(path.replace(/['`;\\",()&^$#!%*=+[\]{}|:<>?]/g, ''))}`;
+export const getDriveAndByIdUrl = (driveId: string, itemId: string) => `drives/${driveId}/items/${itemId}`;
 export async function getMsDir(creds: IMsGraphCreds, prms: IMsGraphOps): Promise<IMsDirOps> {
     const ops = await getDefaultMsGraphConn(creds, prms.logger);
     
@@ -51,14 +54,13 @@ export async function getMsDir(creds: IMsGraphCreds, prms: IMsGraphOps): Promise
     }
     //const getDriveUrl = () => `https://graph.microsoft.com/v1.0/users('${opt.userId}')/drive`
     //const getUrl = (itemId: string, action: string) => `${getDriveUrl()}/items('${itemId}')/${action}`;
-   
-    const getDriveUrl = (path: string) => `/drives/${driveId}/root:/${encodeURIComponent(path.replace(/['`;\/\\",()&^$#!%*=+[\]{}|:<>?]/g, ''))}`;
+       
     async function createFile(path: string, data: Buffer): Promise<IFileCreateResponse> {
-        return ops.doPut(`${getDriveUrl(path)}:/content`, data);
+        return ops.doPut(`${getDriveUrl(driveId, path)}:/content`, data);
     }
     
     async function getFileByPath(fname: string): Promise<Buffer> {
-        return ops.doGet(`${getDriveUrl(fname)}:/content`, cfg => {
+        return ops.doGet(`${getDriveUrl(driveId, fname)}:/content`, cfg => {
             return {
                 ...cfg,
                 responseType: 'arraybuffer',
@@ -67,7 +69,7 @@ export async function getMsDir(creds: IMsGraphCreds, prms: IMsGraphOps): Promise
     }
 
     async function createDir(path: string, name: string): Promise<IDirCreateResponse> {
-        return ops.doPost(`${getDriveUrl(path)}:/children`, {
+        return ops.doPost(`${getDriveUrl(driveId, path)}:/children`, {
             name,
             "folder": {},
             "@microsoft.graph.conflictBehavior": "replace"

@@ -1,8 +1,10 @@
-import { IMsGraphCreds, ILogger, getDefaultMsGraphConn } from "./msauth";
+import { IMsGraphCreds, getDefaultMsGraphConn, IDriveItemInfo } from "./msauth";
+import { IMsGraphOps, getDriveUrl, getDriveAndByIdUrl } from './msdir';
 
 export interface IMsGraphExcelItemOpt {
     tenantClientInfo: IMsGraphCreds;
-    itemId: string;
+    fileName?: string;
+    itemId?: string;
     sheetInfo?: IWorkSheetInfo;
 }
 
@@ -49,11 +51,19 @@ export interface IMsExcelOps {
     updateRange: (name: string, from: string, to: string, values: string[][]) => Promise<IReadSheetValues>;
 }
 
-export async function getMsExcel(opt: IMsGraphExcelItemOpt, logger: ILogger): Promise<IMsExcelOps> {
-    const ops = await getDefaultMsGraphConn(opt.tenantClientInfo, logger);    
 
+export async function getMsExcel(opt: IMsGraphExcelItemOpt, prm: IMsGraphOps): Promise<IMsExcelOps> {
+    const ops = await getDefaultMsGraphConn(opt.tenantClientInfo, prm.logger);    
+
+    if (!opt.itemId) {
+        const drItmUrl = `${getDriveUrl(prm.driveId, opt.fileName)}`;    
+        const r: IDriveItemInfo = await ops.doGet(drItmUrl);
+        opt.itemId = r.id;
+        prm.logger(`query id for ${opt.fileName} = ${opt.itemId}`);        
+    }
     //const getUrl = (postFix: string) => `https://graph.microsoft.com/v1.0/users('${opt.tenantClientInfo.userId}')/drive/items('${opt.itemId}')/workbook/worksheets${postFix}`;
-    const sheetUrl = `drive/items('${opt.itemId}')/workbook/worksheets`;
+    //const sheetUrl = `drive/items('${opt.itemId}')/workbook/worksheets`;
+    const sheetUrl = `${getDriveAndByIdUrl(prm.driveId, opt.itemId)}:/workbook/worksheets`;
 
     async function getWorkSheets(): Promise<IWorkSheetInfo> {
         return await ops.doGet(sheetUrl);

@@ -7,7 +7,11 @@ import * as store from './acccnMsGraphXls/src/store';
 //import creds from './acccnMsGraphXls/credentials.json'
 const fs = require('fs');
 
-
+const driveId = 'b!hXChu0dhsUaKN7pqt1bD3_OeafGaVT1FohEO2dBMjAY5XO0eLYVxS7CH5lgurhQd';
+const msDirPrm: IMsGraphOps = {
+    logger: msg => console.log(msg),
+    driveId,
+};
 function getDefaultDirOpt(): IMsGraphOps {
     return {
         logger: msg => console.log(msg),
@@ -15,6 +19,23 @@ function getDefaultDirOpt(): IMsGraphOps {
         sharedUrl: 'https://acccnusa.sharepoint.com/:f:/r/sites/newcomer/Shared%20Documents/%E6%96%B0%E4%BA%BA%E8%B5%84%E6%96%99?csf=1&web=1&e=8k5NUF',
     }
 }
+
+async function getDriveIdOfUrl(url) {    
+    const aut = await auth.getDefaultMsGraphConn(getDefaultMsGraphConfig());
+    await aut.getSharedItemInfo(url).then(res => {
+        console.log(`Drive id=${res.parentReference.driveId}`);
+        console.log(`id=${res.id} ${res.name}`);
+
+    });
+}
+
+getDriveIdOfUrl('https://acccnusa-my.sharepoint.com/:x:/r/personal/gangzhang_acccn_org/_layouts/15/Doc.aspx?sourcedoc=%7B3A1A129C-2356-4C42-811F-4438CFD36C98%7D&file=AcccnNewGuests.xlsx&action=default&mobileredirect=true')
+    .then(async () => {
+        await testExcellOld();
+    }).catch(err => {
+        console.log(err);
+})
+
 async function testPathFile() {
 
     //const aut = await auth.getDefaultMsGraphConn(getDefaultMsGraphConfig());
@@ -32,9 +53,7 @@ async function testPathFile() {
 
 
 
-testPathFile().catch(err => {
-    console.log(err);
- })
+//testPathFile().catch(err => {console.log(err);})
 
 async function test1() {
     const dir = await getMsDir(getDefaultMsGraphConfig(), getDefaultDirOpt());
@@ -78,11 +97,17 @@ async function test1() {
 async function testExcellOld() {
 
     const ops  = await getMsExcel({
-        itemId: '01XX2KYFM4CINDUVRDIJGICH2EHDH5G3EY',
+        fileName: '新人资料/新人资料表汇总new.xlsx',
+        //fileName:'AcccnNewGuests.xlsx',
         tenantClientInfo: getDefaultMsGraphConfig(),
-    }, msg=>console.log(msg));
+    }, {
+        ...msDirPrm,
+        //driveId: 'b!38QulSRtuEmvnv_ky3EDLMmYEAkrtktPhNRbouRgk9FGZ0JsesssSZRVEVKm90fq'
+    });
     await ops.createSheet('2022-01=tet');
 }
+
+
 
 async function testExcell() {
 
@@ -103,9 +128,9 @@ async function testExcell() {
     if (rr) {
         return console.log(rr);
     }
-    const logger = (msg: string) => console.log(msg);
-    await store.loadData(true, logger);
-    await store.addAndSave(['test1', 'test2', 'test3'], logger).catch(err => {
+    
+    await store.loadData(msDirPrm);
+    await store.addAndSave(['test1', 'test2', 'test3'], msDirPrm).catch(err => {
         console.log(err.message);
         console.log(Object.keys(err));
         console.log(err.isAxiosError);
